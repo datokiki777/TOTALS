@@ -46,6 +46,7 @@ const totalsActiveBtn = document.getElementById("totalsActiveBtn");
 const totalsAllBtn = document.getElementById("totalsAllBtn");
 
 // Export/Import ALL groups
+const pdfAllBtn = document.getElementById("pdfAllBtn");
 const exportAllBtn = document.getElementById("exportAllBtn");
 const importLabel = document.getElementById("importLabel");
 const importAllLabel = document.getElementById("importAllLabel");
@@ -304,7 +305,7 @@ function setControlsForMode(mode) {
 
   // What should be enabled in each mode
   const enableAlways = [modeEditBtn, modeReviewBtn, totalsActiveBtn, totalsAllBtn];
-  const enableInReview = [exportBtn, exportAllBtn]; // ✅ only these work in Review
+  const enableInReview = [groupSelect, exportBtn, exportAllBtn, pdfAllBtn];
   const enableInEdit = [
     groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn,
     defaultRateInput,
@@ -323,11 +324,12 @@ function setControlsForMode(mode) {
 
   // First disable everything we manage
   const all = [
-    groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn,
-    defaultRateInput,
-    addPeriodBtn, exportBtn, importInput, resetBtn,
-    exportAllBtn, importAllInput,
-  ];
+  groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn,
+  defaultRateInput,
+  addPeriodBtn, exportBtn, importInput, resetBtn,
+  exportAllBtn, importAllInput,
+  pdfAllBtn
+];
   all.forEach((el) => setEl(el, false));
 
   // Enable the correct set
@@ -367,6 +369,7 @@ function setControlsForMode(mode) {
 // Hide imports in REVIEW (show in EDIT)
     if (importLabel) importLabel.style.display = isEdit ? "" : "none";
     if (importAllLabel) importAllLabel.style.display = isEdit ? "" : "none";
+    if (pdfAllBtn) pdfAllBtn.style.display = isEdit ? "none" : "";
 }
 
 function renderReview() {
@@ -776,12 +779,36 @@ function mergeAppState(incomingState) {
 
   modeEditBtn?.addEventListener("click", () =>     setMode("edit"));
   modeReviewBtn?.addEventListener("click", () =>   setMode("review"));
+  pdfAllBtn?.addEventListener("click", () => {
+  if (!pdfAllBtn) return;
+
+  // prevent double taps / freeze
+  pdfAllBtn.disabled = true;
+  const oldText = pdfAllBtn.textContent;
+  pdfAllBtn.textContent = "Generating PDF...";
+
+  setTimeout(() => {
+    try {
+      exportPdfAllGroups();
+    } finally {
+      // re-enable after a short delay (download dialog may appear)
+      setTimeout(() => {
+        pdfAllBtn.disabled = false;
+        pdfAllBtn.textContent = oldText;
+      }, 1200);
+    }
+  }, 50);
+});
 
 // Group switching
+
 groupSelect?.addEventListener("change", () => {
   appState.activeGroupId = groupSelect.value;
   saveState();
   render();
+
+  // If we are in REVIEW, refresh the review HTML too
+  if (appState.uiMode === "review") renderReview();
 });
 
 // Add group
@@ -1022,6 +1049,142 @@ toggleToTop();
 toTopBtn?.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
+
+ function exportPdfAllGroups() {
+  // Check jsPDF
+  const jsPDF = window.jspdf?.jsPDF;
+  if (!jsPDF) {
+    alert("PDF library not loaded. Check jsPDF script tag.");
+    return;
+  }
+
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  const margin = 12;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const maxW = pageW - margin * 2;
+
+  let y = margin;
+
+  const lineH = 6;
+
+  const addPageIfNeeded = (need = lineH) => {
+    if (y + need > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const textLine = (txt, size = 11, bold = false) => {
+    addPageIfNeeded(lineH);
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(size);
+
+    const lines = doc.splitTextToSize(String(txt), maxW);
+    lines.forEach((ln) => {
+      addPageIfNeeded(lineH);
+      doc.text(ln, margin, y);
+      y += lineH;
+    });
+  };
+
+  const hr = () => {
+    addPageIfNeeded(4);
+    doc.setDrawColor(180);
+    doc.line(margin, y, pageW - margin, y);
+    y += 5;
+  };
+
+  const money = (n) => fmt(Number(n || 0));
+
+  // --- Build totals ---
+  const overall = { gross: 0, net: 0, my: 0, groups: appState.groups.length };
+
+  const groupsData = appState.groups.map((gr) => {
+    const st = gr.data;
+
+    const groupTotals = st.periods.reduce(
+      (acc, p) => {
+        const pg = p.rows.reduce((s, r) => s + parseMoney(r.gross), 0);
+        const pn = p.rows.reduce((s, r) => s + parseMoney(r.net), 0);
+        const pm = pn * (clampRate(st.defaultRatePercent) / 100);
+
+        acc.gross += pg;
+        acc.net += pn;
+        acc.my += pm;
+        acc.periods += 1;
+        acc.rows += p.rows.length;
+        return acc;
+      },
+      { gross: 0, net: 0, my: 0, periods: 0, rows: 0 }
+    );
+
+    overall.gross += groupTotals.gross;
+    overall.net += groupTotals.net;
+    overall.my += groupTotals.my;
+
+    return { gr, st, groupTotals };
+  });
+
+  // --- Header ---
+  textLine("Client Totals — PDF Report (ALL Groups)", 16, true);
+  textLine(`Exported: ${new Date().toLocaleString()}`, 10, false);
+  hr();
+
+  // --- Overall summary ---
+  textLine("OVERALL SUMMARY", 12, true);
+  textLine(`Groups: ${overall.groups}`, 11, false);
+  textLine(`Gross: ${money(overall.gross)}   Net: ${money(overall.net)}   My €: ${money(overall.my)}`, 11, true);
+  hr();
+
+  // --- Per group ---
+  groupsData.forEach(({ gr, st, groupTotals }, gi) => {
+    textLine(`GROUP: ${gr.name}`, 13, true);
+    textLine(`Default %: ${money(st.defaultRatePercent)}%   Periods: ${groupTotals.periods}   Rows: ${groupTotals.rows}`, 10, false);
+    textLine(`Gross: ${money(groupTotals.gross)}   Net: ${money(groupTotals.net)}   My €: ${money(groupTotals.my)}`, 11, true);
+    hr();
+
+    // Periods
+    st.periods.forEach((p, pi) => {
+      const from = p.from || "—";
+      const to = p.to || "—";
+
+      const pg = p.rows.reduce((s, r) => s + parseMoney(r.gross), 0);
+      const pn = p.rows.reduce((s, r) => s + parseMoney(r.net), 0);
+      const pm = pn * (clampRate(st.defaultRatePercent) / 100);
+
+      textLine(`Period ${pi + 1}: ${from} → ${to}`, 11, true);
+      textLine(`Gross: ${money(pg)}   Net: ${money(pn)}   My €: ${money(pm)}   (Clients: ${p.rows.length})`, 10, false);
+
+      // Simple rows list (no horizontal scroll in PDF)
+      p.rows.forEach((r) => {
+        const name = (r.customer || "Client").toString().trim() || "Client";
+        const rg = money(parseMoney(r.gross));
+        const rn = money(parseMoney(r.net));
+        textLine(`• ${name} | Gross: ${rg} | Net: ${rn}`, 10, false);
+      });
+
+      hr();
+    });
+
+    if (gi !== groupsData.length - 1) {
+      addPageIfNeeded(20);
+    }
+  });
+
+  const fileName = `client-totals_ALL_${nowStamp()}.pdf`;
+
+// Give UI time before triggering the download dialog (prevents freeze)
+setTimeout(() => {
+  try {
+    doc.save(fileName);
+  } catch (e) {
+    console.error(e);
+    alert("PDF export failed (device download issue). Try again or use Chrome.");
+  }
+}, 150);
+}
 
 /* =========================
    14) Init
