@@ -6,8 +6,10 @@
   <title>Client Period Totals</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <header class="topbar">
+    <!-- Brand -->
     <div class="brand">
       <div class="logo">CT</div>
       <div>
@@ -15,26 +17,71 @@
         <div class="subtitle">Periods • Gross/Net • My €</div>
       </div>
     </div>
+    
+    <div class="mode-toggle">
+      <button id="modeEditBtn" class="toggle-btn active">Edit</button>
+      <button id="modeReviewBtn" class="toggle-btn">Review</button>
+    </div>
 
+    <!-- Controls -->
     <div class="controls">
-      <label class="field">
-        <span>Default %</span>
-        <input id="defaultRate" type="number" step="0.01" min="0" max="100" value="13.5" />
-      </label>
+      <!-- LEFT SIDE: Groups + Default -->
+      <div class="actions-left">
+        <!-- GROUPS -->
+        <label class="field group-field">
+          <span>Group</span>
+          <div class="group-row">
+            <select id="groupSelect" class="select"></select>
+            <button id="addGroupBtn" class="btn small primary">+ Group</button>
+            <button id="renameGroupBtn" class="btn small">Rename</button>
+            <button id="deleteGroupBtn" class="btn small danger">Del</button>
+          </div>
+        </label>
 
-      <button id="addPeriodBtn" class="btn primary">+ New Period</button>
-      <button id="exportBtn" class="btn">Export</button>
-      <label class="btn file">
-        Import
-        <input id="importInput" type="file" accept="application/json" hidden />
-      </label>
-      <button id="resetBtn" class="btn danger">Reset</button>
+        <label class="field">
+          <span>Default %</span>
+          <input id="defaultRate" type="number" step="0.01" min="0" max="100" value="13.5" />
+        </label>
+      </div>
+
+      <!-- RIGHT SIDE: Actions -->
+      <div class="actions-right">
+        <!-- MAIN ACTIONS -->
+        <div class="btn-row">
+          <button id="addPeriodBtn" class="btn primary">+ New Period</button>
+
+          <button id="exportBtn" class="btn">Export</button>
+          <label id="importLabel" class="btn      file">
+               Import
+               <input id="importInput" type="file" accept="application/json" hidden />
+          </label>
+
+          <button id="resetBtn" class="btn danger">Reset</button>
+        </div>
+
+        <!-- BACKUP (ALL GROUPS) -->
+        <div class="btn-row backup-row">
+          <button id="exportAllBtn" class="btn">Export All</button>
+          <label id="importAllLabel" class="btn file">
+             Import All
+             <input id="importAllInput" type="file" accept="application/json" hidden />
+          </label>
+        </div>
+      </div>
     </div>
   </header>
 
   <main class="container">
     <section class="summary card">
-      <h2>Grand Total</h2>
+      <div class="summary-head">
+        <h2>Grand Total</h2>
+
+        <div class="toggle">
+          <button id="totalsActiveBtn" class="toggle-btn active">Active</button>
+          <button id="totalsAllBtn" class="toggle-btn">All</button>
+        </div>
+      </div>
+
       <div class="summary-grid">
         <div class="kpi">
           <div class="kpi-label">Gross</div>
@@ -49,10 +96,17 @@
           <div class="kpi-value" id="grandMy">0.00</div>
         </div>
       </div>
+
       <div class="hint">Tip: numbers accept decimals. Use dot or comma; app normalizes.</div>
     </section>
 
-    <div id="periods"></div>
+    <!-- EDIT VIEW -->
+      <div id="editView">
+  <div id="periods"></div>
+</div>
+
+    <!-- REVIEW VIEW -->
+      <div id="reviewView" hidden></div>
 
     <footer class="footer">
       <div>Saved locally on this device. Use Export/Import for backup.</div>
@@ -119,6 +173,22 @@
     </tr>
   </template>
 
+  <!-- Scroll to top button (must be inside body) -->
+  <button id="toTopBtn" class="to-top" aria-label="Back to top">↑</button>
+
+<!-- Confirm Modal -->
+  <div id="confirmModal" class="modal-backdrop" style="display:none;">
+    <div class="modal">
+      <div class="modal-title" id="confirmTitle">Confirm</div>
+      <div class="modal-text" id="confirmText">Are you sure?</div>
+      <div class="modal-actions">
+        <button id="confirmNo" class="btn">No</button>
+        <button id="confirmYes" class="btn danger">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ script MUST be inside body, before closing -->
   <script src="app.js"></script>
 </body>
 </html>
