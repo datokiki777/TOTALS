@@ -6,7 +6,7 @@
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
   "orientation": "portrait",
-  [
+  "icons" : [
   {
     "purpose": "maskable",
     "sizes": "192x192",
@@ -20,4 +20,5 @@
     "type": "image/png"
   }
 ]
+
 }
