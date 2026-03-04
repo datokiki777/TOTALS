@@ -204,6 +204,32 @@
        navigator.serviceWorker.register("service-worker.js");
   }
 </script>
+  
+<div id="updateBox" style="
+position:fixed;
+bottom:20px;
+left:20px;
+right:20px;
+background:#0b1220;
+color:white;
+padding:12px;
+border-radius:12px;
+display:none;
+z-index:9999;
+font-size:14px;
+">
+New version available
+<button id="updateBtn" style="
+margin-left:10px;
+padding:6px 10px;
+border-radius:8px;
+border:none;
+background:#5dd4ff;
+font-weight:bold;
+">
+UPDATE
+</button>
+</div>
 
 </body>
 </html>
