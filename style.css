@@ -1154,3 +1154,135 @@ body[data-theme="light"] .period-group-box{
 body.all-periods-collapsed .fab-add-client{
   display:none !important;
 }
+
+/* =========================
+   Client status button (3 states)
+========================= */
+
+.done-head{
+  text-align:center;
+  padding-left:18px !important;
+}
+
+.done-cell{
+  text-align:center;
+  vertical-align:middle;
+}
+
+.doneBtn{
+  width:16px;
+  height:16px;
+  border-radius:5px;
+  border:1px solid rgba(255,255,255,.22);
+  background: transparent;
+  cursor:pointer;
+  display:inline-block;
+  padding:0;
+  position:relative;
+  transition:transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.doneBtn:active{
+  transform:scale(.92);
+}
+
+.doneBtn.state-none{
+  background: transparent;
+  border-color: rgba(255,255,255,.24);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+}
+
+.doneBtn.state-done{
+  background: #22c55e;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34,197,94,.14);
+}
+
+.doneBtn.state-done::after{
+  content:"";
+  position:absolute;
+  left:4px;
+  top:1px;
+  width:4px;
+  height:8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.doneBtn.state-fail{
+  background: #ef4444;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239,68,68,.14);
+}
+
+.doneBtn.state-fail::before,
+.doneBtn.state-fail::after{
+  content:"";
+  position:absolute;
+  left:6px;
+  top:2px;
+  width:2px;
+  height:10px;
+  background:#fff;
+  border-radius:2px;
+}
+
+.doneBtn.state-fail::before{
+  transform:rotate(45deg);
+}
+
+.doneBtn.state-fail::after{
+  transform:rotate(-45deg);
+}
+
+/* light theme */
+body[data-theme="light"] .doneBtn.state-none{
+  border-color: rgba(15,23,42,.22);
+  box-shadow: inset 0 0 0 1px rgba(15,23,42,.04);
+}
+
+/* =========================
+   Review status badge
+========================= */
+
+.client-name-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.review-status{
+  display:inline-flex;
+  align-items:center;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  line-height:1;
+}
+
+.review-status-done{
+  background: rgba(34,197,94,.16);
+  border:1px solid rgba(34,197,94,.34);
+  color:#22c55e;
+}
+
+.review-status-fail{
+  background: rgba(239,68,68,.16);
+  border:1px solid rgba(239,68,68,.34);
+  color:#ef4444;
+}
+
+body[data-theme="light"] .review-status-done{
+  color:#15803d;
+  border-color: rgba(21,128,61,.28);
+  background: rgba(21,128,61,.10);
+}
+
+body[data-theme="light"] .review-status-fail{
+  color:#b91c1c;
+  border-color: rgba(185,28,28,.24);
+  background: rgba(185,28,28,.08);
+}
