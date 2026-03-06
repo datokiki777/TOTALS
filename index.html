@@ -13,7 +13,7 @@
   <header class="topbar">
 
      <div class="mode-toggle">
-  <div class="mode-switch">
+    <div class="mode-switch">
     <button id="modeEditBtn" class="btn small">Edit</button>
     <button id="modeReviewBtn" class="btn small">Review</button>
   </div>
@@ -191,28 +191,30 @@
       <div class="table-wrap">
         <table class="tbl">
           <thead>
-            <tr>
-              <th style="width: 32%">Customer</th>
-              <th style="width: 18%">Gross</th>
-              <th style="width: 18%">Net</th>
-              <th style="width: 18%">City</th>
-              <th style="width: 14%">Actions</th>
-            </tr>
-          </thead>
+          <tr>
+           <th style="width: 30%">Customer</th>
+           <th style="width: 16%">Gross</th>
+           <th style="width: 16%">Net</th>
+           <th style="width: 16%">City</th>
+           <th class="done-head" style="width: 8%">Done</th>
+           <th style="width: 14%">Actions</th>
+          </tr>
+       </thead>
 
           <tbody class="rows"></tbody>
 
           <tfoot>
-            <tr class="total-row">
+             <tr class="total-row">
               <td class="total-label">TOTAL</td>
               <td class="total-gross">0.00</td>
               <td class="total-net">0.00</td>
-              <td class="total-my">
-                <span class="pill">My €: <b class="my-eur">0.00</b></span>
-              </td>
-              <td></td>
+            <td class="total-my">
+            <span class="pill">My €: <b class="my-eur">0.00</b></span>
+                  </td>
+                 <td></td>
+               <td></td>
             </tr>
-          </tfoot>
+        </tfoot>
         </table>
       </div>
     </div>
@@ -220,14 +222,17 @@
 </template>
 
   <template id="rowTpl">
-    <tr>
-      <td><input class="cust" type="text" placeholder="Client name" /></td>
-      <td><input class="gross" type="text" inputmode="decimal" placeholder="0" /></td>
-      <td><input class="net" type="text" inputmode="decimal" placeholder="0" /></td>
-      <td><input class="city" type="text" placeholder="City" /></td>
-      <td><button class="btn small ghost removeRow">Remove</button></td>
-    </tr>
-  </template>
+  <tr>
+    <td><input class="cust" type="text" placeholder="Client name" /></td>
+    <td><input class="gross" type="text" inputmode="decimal" placeholder="0" /></td>
+    <td><input class="net" type="text" inputmode="decimal" placeholder="0" /></td>
+    <td><input class="city" type="text" placeholder="City" /></td>
+    <td class="done-cell">
+      <button class="doneBtn state-none" type="button" aria-label="Status"></button>
+    </td>
+    <td><button class="btn small ghost removeRow">Remove</button></td>
+  </tr>
+</template>
 
   <!-- Scroll to top button (must be inside body) -->
   <button id="toTopBtn" class="to-top" aria-label="Back to top">↑</button>
