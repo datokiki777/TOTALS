@@ -1,4 +1,4 @@
-const CACHE = "client-totals-v7";
+const CACHE = "client-totals-v8";
 
 const ASSETS = [
   "./",
@@ -32,5 +32,6 @@ self.addEventListener("fetch", (event) => {
   );
 
 });
+
 
 
