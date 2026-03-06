@@ -5,27 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client Period Totals</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b1220">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b1220" />
 </head>
 
 <body>
   <header class="topbar">
-    <!-- Brand -->
-    <div class="brand">
-      <div class="logo">CT</div>
-      <div>
-        <div class="title">Client Totals</div>
-        <div class="subtitle">Periods • Gross/Net • My €</div>
-      </div>
-    </div>
-    
-    <div class="mode-toggle">
-      <button id="modeEditBtn" class="toggle-btn active">Edit</button>
-      <button id="modeReviewBtn" class="toggle-btn">Review</button>
-    </div>
-    
-    <button id="controlsToggle" class="btn small">Controls</button>
+
+     <div class="mode-toggle">
+  <div class="mode-switch">
+    <button id="modeEditBtn" class="btn small">Edit</button>
+    <button id="modeReviewBtn" class="btn small">Review</button>
+  </div>
+
+  <button id="controlsToggle" class="btn small">⚙ Controls</button>
+
+  <label class="theme-switch" title="Theme">
+    <input id="themeSwitch" type="checkbox">
+    <span class="slider"></span>
+    <span class="icon moon">🌙</span>
+    <span class="icon sun">☀️</span>
+  </label>
+</div>
 
     <!-- Controls -->
     <div class="controls">
@@ -55,9 +56,9 @@
           <button id="addPeriodBtn" class="btn primary">+ New Period</button>
 
           <button id="exportBtn" class="btn">Export</button>
-          <label id="importLabel" class="btn      file">
-               Import
-               <input id="importInput" type="file" accept="application/json" hidden />
+          <label id="importLabel" class="btn file">
+            Import
+            <input id="importInput" type="file" accept="application/json" hidden />
           </label>
 
           <button id="resetBtn" class="btn danger">Reset</button>
@@ -68,8 +69,8 @@
           <button id="exportAllBtn" class="btn">Export All</button>
           <button id="pdfAllBtn" class="btn">PDF (All)</button>
           <label id="importAllLabel" class="btn file">
-             Import All
-             <input id="importAllInput" type="file" accept="application/json" hidden />
+            Import All
+            <input id="importAllInput" type="file" accept="application/json" hidden />
           </label>
         </div>
       </div>
@@ -78,52 +79,97 @@
 
   <main class="container">
     <section class="summary card">
-      <div class="summary-head">
-        <h2>Grand Total</h2>
+  <div class="summary-head">
+    <button id="summaryCollapseBtn" class="summary-title-btn" type="button">
+      <span>Grand Total</span>
+      <span id="summaryCollapseIcon" class="summary-collapse-icon">▾</span>
+    </button>
 
-        <div class="toggle">
-          <button id="totalsActiveBtn" class="toggle-btn active">Active</button>
-          <button id="totalsAllBtn" class="toggle-btn">All</button>
+    <div class="toggle">
+      <button id="totalsActiveBtn" class="toggle-btn active">Active</button>
+      <button id="totalsAllBtn" class="toggle-btn">All</button>
+    </div>
+  </div>
+
+  <div id="summaryBody" class="summary-body">
+    <div class="summary-grid">
+      <div class="kpi">
+        <div class="kpi-label">Gross</div>
+        <div class="kpi-value" id="grandGross">0.00</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Net</div>
+        <div class="kpi-value" id="grandNet">0.00</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">My €</div>
+        <div class="kpi-value" id="grandMy">0.00</div>
+      </div>
+    </div>
+
+    <div class="monthly-stats">
+      <div class="monthly-head">
+        <div class="monthly-title">Monthly Statistics</div>
+
+        <div class="month-nav">
+          <button id="monthPrevBtn" class="btn small" type="button">‹</button>
+          <div id="monthLabel" class="month-label">March 2026</div>
+          <button id="monthNextBtn" class="btn small" type="button">›</button>
         </div>
       </div>
 
-      <div class="summary-grid">
+      <div class="monthly-grid">
         <div class="kpi">
-          <div class="kpi-label">Gross</div>
-          <div class="kpi-value" id="grandGross">0.00</div>
+          <div class="kpi-label">Month Gross</div>
+          <div class="kpi-value" id="monthGross">0.00</div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">Net</div>
-          <div class="kpi-value" id="grandNet">0.00</div>
+          <div class="kpi-label">Month Net</div>
+          <div class="kpi-value" id="monthNet">0.00</div>
         </div>
         <div class="kpi">
-          <div class="kpi-label">My €</div>
-          <div class="kpi-value" id="grandMy">0.00</div>
+          <div class="kpi-label">Month My €</div>
+          <div class="kpi-value" id="monthMy">0.00</div>
         </div>
       </div>
-
-      <div class="hint">Tip: numbers accept decimals. Use dot or comma; app normalizes.</div>
-    </section>
+    </div>
+  </div>
+</section>
 
     <!-- EDIT VIEW -->
-      <div id="editView">
-  <div id="periods"></div>
-</div>
+    <div id="editView">
+      <div id="periods"></div>
+    </div>
 
     <!-- REVIEW VIEW -->
-      <div id="reviewView" hidden></div>
+    <div id="reviewView" hidden></div>
 
     <footer class="footer">
       <div>Saved locally on this device. Use Export/Import for backup.</div>
     </footer>
   </main>
 
-  <template id="periodTpl">
-    <section class="period card">
+      <template id="periodTpl">
+  <section class="period card">
+    <div class="period-top">
+  <button class="period-collapse-btn" type="button">
+    <span class="period-collapse-title">Period</span>
+
+    <span class="period-collapse-meta">
+      <span class="period-group-preview">Group</span>
+      <span class="period-range-preview">— → —</span>
+    </span>
+
+       <span class="period-collapse-icon">▾</span>
+     </button>
+   </div>
+
+    <div class="period-body-wrap">
       <div class="period-head">
         <div class="period-title">
           <h2>Period</h2>
-          <div class="period-dates">
+            <div class="period-group-box">Group</div>
+             <div class="period-dates">
             <label class="field">
               <span>From</span>
               <input class="fromDate" type="date" />
@@ -136,10 +182,9 @@
         </div>
 
         <div class="period-actions">
-          <button class="btn small addRow">+ Add client</button>
-          <td class="actions">
-           <button class="btn danger small removeRow">Remove</button>
-          </td>
+          <button class="btn small primary addRow">+ Add client</button>
+          <button class="btn danger small removePeriod">Remove period</button>
+          <button class="btn small addPeriodInline">+ Add period</button>
         </div>
       </div>
 
@@ -154,7 +199,9 @@
               <th style="width: 14%">Actions</th>
             </tr>
           </thead>
+
           <tbody class="rows"></tbody>
+
           <tfoot>
             <tr class="total-row">
               <td class="total-label">TOTAL</td>
@@ -163,12 +210,14 @@
               <td class="total-my">
                 <span class="pill">My €: <b class="my-eur">0.00</b></span>
               </td>
+              <td></td>
             </tr>
           </tfoot>
         </table>
       </div>
-    </section>
-  </template>
+    </div>
+  </section>
+</template>
 
   <template id="rowTpl">
     <tr>
@@ -184,7 +233,7 @@
   <button id="toTopBtn" class="to-top" aria-label="Back to top">↑</button>
   <button id="fabAddClient" class="btn primary fab-add-client">+ Add client</button>
 
-<!-- Confirm Modal -->
+  <!-- Confirm Modal -->
   <div id="confirmModal" class="modal-backdrop" style="display:none;">
     <div class="modal">
       <div class="modal-title" id="confirmTitle">Confirm</div>
@@ -196,40 +245,13 @@
     </div>
   </div>
 
-  <!-- ✅ script MUST be inside body, before closing -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" ></script>
+  <!-- scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="app.js"></script>
   <script>
-     if ("serviceWorker" in navigator) {
-       navigator.serviceWorker.register("service-worker.js");
-  }
-</script>
-  
-<div id="updateBox" style="
-position:fixed;
-bottom:20px;
-left:20px;
-right:20px;
-background:#0b1220;
-color:white;
-padding:12px;
-border-radius:12px;
-display:none;
-z-index:9999;
-font-size:14px;
-">
-New version available
-<button id="updateBtn" style="
-margin-left:10px;
-padding:6px 10px;
-border-radius:8px;
-border:none;
-background:#5dd4ff;
-font-weight:bold;
-">
-UPDATE
-</button>
-</div>
-
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
 </body>
 </html>
