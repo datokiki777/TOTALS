@@ -221,16 +221,36 @@ function daysBetweenInclusive(a, b) {
 
 function parseDateOnly(dateStr) {
   if (!dateStr) return null;
-  const parts = String(dateStr).split("-");
-  if (parts.length !== 3) return null;
 
-  const y = Number(parts[0]);
-  const m = Number(parts[1]) - 1;
-  const d = Number(parts[2]);
+  const s = String(dateStr).trim();
 
-  const out = new Date(y, m, d);
-  if (Number.isNaN(out.getTime())) return null;
-  return out;
+  // YYYY-MM-DD
+  if (s.includes("-")) {
+    const parts = s.split("-");
+    if (parts.length === 3) {
+      const y = Number(parts[0]);
+      const m = Number(parts[1]) - 1;
+      const d = Number(parts[2]);
+
+      const out = new Date(y, m, d);
+      if (!Number.isNaN(out.getTime())) return out;
+    }
+  }
+
+  // DD/MM/YYYY
+  if (s.includes("/")) {
+    const parts = s.split("/");
+    if (parts.length === 3) {
+      const d = Number(parts[0]);
+      const m = Number(parts[1]) - 1;
+      const y = Number(parts[2]);
+
+      const out = new Date(y, m, d);
+      if (!Number.isNaN(out.getTime())) return out;
+    }
+  }
+
+  return null;
 }
 
 function monthKeyFromDateObj(d) {
@@ -296,7 +316,7 @@ function getOverlapDaysInclusive(periodFrom, periodTo, monthStart, monthEnd) {
   return daysBetweenInclusive(start, end);
 }
 
-function calcMonthlyTotals(monthKey, mode = appState.grandMode) {
+  function calcMonthlyTotals(monthKey, mode = appState.grandMode) {
   if (!monthKey) return { gross: 0, net: 0, my: 0 };
 
   const monthStart = getMonthStart(monthKey);
@@ -328,17 +348,55 @@ function calcMonthlyTotals(monthKey, mode = appState.grandMode) {
   return totals;
 }
 
-function renderMonthlyStats() {
+  function calcMonthlyStatus(monthKey, mode = appState.grandMode) {
+  if (!monthKey) return { done: 0, fail: 0 };
+
+  const monthStart = getMonthStart(monthKey);
+  const monthEnd = getMonthEnd(monthKey);
+  const groups = mode === "all" ? appState.groups : [activeGroup()];
+
+  let done = 0;
+  let fail = 0;
+
+  groups.forEach((gr) => {
+    (gr.data.periods || []).forEach((p) => {
+      const from = parseDateOnly(p.from);
+      const to = parseDateOnly(p.to);
+
+      if (!from || !to || to < from) return;
+
+      const overlapDays = getOverlapDaysInclusive(from, to, monthStart, monthEnd);
+      if (overlapDays <= 0) return;
+
+      (p.rows || []).forEach((r) => {
+        if (r.done === "done") done++;
+        if (r.done === "fail") fail++;
+      });
+    });
+  });
+
+  return { done, fail };
+}
+
+
+ function renderMonthlyStats() {
   if (!monthLabel || !monthGrossEl || !monthNetEl || !monthMyEl) return;
 
   const keys = getAllMonthKeysForMode(appState.grandMode);
   const currentKey = getCurrentMonthKey(appState.grandMode);
   const totals = calcMonthlyTotals(currentKey, appState.grandMode);
+  const status = calcMonthlyStatus(currentKey, appState.grandMode);
+
+  const doneEl = document.getElementById("monthDone");
+  const failEl = document.getElementById("monthFail");
 
   monthLabel.textContent = formatMonthKey(currentKey);
   monthGrossEl.textContent = fmt(totals.gross);
   monthNetEl.textContent = fmt(totals.net);
   monthMyEl.textContent = fmt(totals.my);
+
+  if (doneEl) doneEl.textContent = status.done;
+  if (failEl) failEl.textContent = status.fail;
 
   if (monthPrevBtn) monthPrevBtn.disabled = !currentKey || currentKey === keys[0];
   if (monthNextBtn) monthNextBtn.disabled = !currentKey || currentKey === keys[keys.length - 1];
