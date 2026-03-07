@@ -1187,8 +1187,8 @@ function buildReviewSearchIndex() {
     const periods = gr?.data?.periods || [];
 
     periods.forEach((p) => {
-      const from = p?.from || "—";
-      const to = p?.to || "—";
+      const from = formatDateLocal(p?.from) || "—";
+      const to = formatDateLocal(p?.to) || "—";
 
       (p?.rows || []).forEach((r) => {
         const customer = (r?.customer ?? "").toString().trim();
@@ -1342,8 +1342,8 @@ function renderReview() {
 
   const periodsHtml = st.periods.map((p) => {
     const t = calcPeriodTotals(p, st.defaultRatePercent);
-    const from = p.from || "—";
-    const to = p.to || "—";
+    const from = formatDateLocal(p.from) || "—";
+    const to = formatDateLocal(p.to) || "—";
 
     const clients = p.rows.map((r) => {
   const name = r.customer?.trim() || "Client";
@@ -1581,9 +1581,9 @@ function exportPdfAllGroups() {
     hr();
 
     st.periods.forEach((p, pi) => {
-      const from = p.from || "—";
-      const to = p.to || "—";
-      const t = calcPeriodTotals(p, st.defaultRatePercent);
+    const from = formatDateLocal(p.from) || "—";
+    const to = formatDateLocal(p.to) || "—";
+    const t = calcPeriodTotals(p, st.defaultRatePercent);
 
       textLine(`Period ${pi + 1}: ${from} → ${to}`, 11, true);
       textLine(
