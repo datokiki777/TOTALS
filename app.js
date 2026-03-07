@@ -1095,17 +1095,22 @@ if (section) {
   });
 
   doneBtn?.addEventListener("click", () => {
-    const current = ["none", "done", "fail"].includes(r.done) ? r.done : "none";
+  const current = ["none", "done", "fail"].includes(r.done) ? r.done : "none";
 
-    if (current === "none") r.done = "done";
-    else if (current === "done") r.done = "fail";
-    else r.done = "none";
+  if (current === "none") r.done = "done";
+  else if (current === "done") r.done = "fail";
+  else r.done = "none";
 
-    doneBtn.classList.remove("state-none", "state-done", "state-fail");
-    doneBtn.classList.add(`state-${r.done}`);
+  doneBtn.classList.remove("state-none", "state-done", "state-fail");
+  doneBtn.classList.add(`state-${r.done}`);
 
-    saveState();
-  });
+  saveState();
+  renderMonthlyStats();
+
+  if (appState.uiMode === "review") {
+    renderReview();
+  }
+});
 
   removeRowBtn?.addEventListener("click", async () => {
     const ok = await askConfirm("Delete this client row?", "Delete row");
