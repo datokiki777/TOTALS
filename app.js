@@ -1660,6 +1660,24 @@ function mergeAppState(incomingState) {
   return { done, fail, fixed };
 }
 
+  function calcOverallStatusCounts() {
+  let done = 0;
+  let fail = 0;
+  let fixed = 0;
+
+  (appState.groups || []).forEach((g) => {
+    (g.data?.periods || []).forEach((p) => {
+      (p.rows || []).forEach((r) => {
+        if (r.done === "done") done++;
+        else if (r.done === "fail") fail++;
+        else if (r.done === "fixed") fixed++;
+      });
+    });
+  });
+
+  return { done, fail, fixed };
+}
+
 /* =========================
    17) PDF Export
 ========================= */
@@ -1738,12 +1756,29 @@ function exportPdfAllGroups() {
   hr();
 
   textLine("OVERALL SUMMARY", 12, true);
+  const overallStatus = calcOverallStatusCounts();
   textLine(`Groups: ${overall.groups}`, 11, false);
   textLine(
     `Gross: ${money(overall.gross)}   Net: ${money(overall.net)}   My €: ${money(overall.my)}`,
     11,
     true
   );
+  addPageIfNeeded(lineH);
+
+doc.setFont("helvetica", "bold");
+doc.setFontSize(11);
+
+doc.setTextColor(30, 160, 80);
+doc.text(`Done: ${overallStatus.done}`, margin, y);
+
+doc.setTextColor(220, 60, 60);
+doc.text(`Fail: ${overallStatus.fail}`, margin + 40, y);
+
+doc.setTextColor(215, 170, 20);
+doc.text(`Fixed: ${overallStatus.fixed}`, margin + 70, y);
+
+doc.setTextColor(0, 0, 0);
+y += lineH;
   hr();
 
   groupsData.forEach(({ gr, st, groupTotals }, gi) => {
