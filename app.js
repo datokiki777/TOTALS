@@ -1,18 +1,5 @@
 /* =========================================================
-   Client Totals (Groups Edition) — GitHub Pages friendly
-   ✅ Groups
-   ✅ Edit / Review modes (saved)
-   ✅ Grand totals: Active group / All groups
-   ✅ Custom confirm modal fallback to window.confirm
-   ✅ Export/Import:
-       - Active group JSON (replace)
-       - All groups JSON (MERGE or REPLACE)
-   ✅ City field per client row
-   ✅ PDF Export (ALL groups) via jsPDF
-   ✅ Scroll-to-top
-   ✅ Controls collapse toggle (mobile friendly)
-   ✅ Floating "+ Client" button in Edit
-   ✅ Theme toggle (Dark/Light) + saved in localStorage
+   Client Totals (Groups Edition) — Stable + Clean
 ========================================================= */
 
 /* =========================
@@ -22,15 +9,15 @@
 const STORAGE_KEY = "client_totals_groups_v1";
 const CONTROLS_KEY = "ct_controls_collapsed";
 const THEME_KEY = "ct_theme_v1";
-
 const SUMMARY_COLLAPSED_KEY = "ct_summary_collapsed";
 const MONTH_CURSOR_KEY = "ct_month_cursor";
-
 const PERIODS_COLLAPSED_KEY = "ct_periods_collapsed";
 
 /* =========================
    2) DOM
 ========================= */
+
+const rootEl = document.documentElement;
 
 // Main UI
 const modeEditBtn = document.getElementById("modeEditBtn");
@@ -67,7 +54,7 @@ const addGroupBtn = document.getElementById("addGroupBtn");
 const renameGroupBtn = document.getElementById("renameGroupBtn");
 const deleteGroupBtn = document.getElementById("deleteGroupBtn");
 
-// Grand Total toggle (Active / All)
+// Grand Total toggle
 const totalsActiveBtn = document.getElementById("totalsActiveBtn");
 const totalsAllBtn = document.getElementById("totalsAllBtn");
 
@@ -79,24 +66,30 @@ const importAllInput = document.getElementById("importAllInput");
 // Scroll-to-top
 const toTopBtn = document.getElementById("toTopBtn");
 
-// Controls collapse toggle button
+// Controls collapse
 const controlsToggle = document.getElementById("controlsToggle");
 
 // Floating add client
 const fabAddClient = document.getElementById("fabAddClient");
 
-// Confirm modal elements (optional)
+// Confirm modal
 const confirmBackdrop = document.getElementById("confirmModal");
 const confirmTitleEl = document.getElementById("confirmTitle");
 const confirmTextEl = document.getElementById("confirmText");
 const confirmNoBtn = document.getElementById("confirmNo");
 const confirmYesBtn = document.getElementById("confirmYes");
 
-// Theme controls (flexible)
-const themeToggle = document.getElementById("themeToggle");     // optional one button
-const themeDarkBtn = document.getElementById("themeDarkBtn");   // optional
-const themeLightBtn = document.getElementById("themeLightBtn"); // optional
-const themeSwitch = document.getElementById("themeSwitch");     // optional checkbox
+// Status list modal
+const statusListModal = document.getElementById("statusListModal");
+const statusListTitle = document.getElementById("statusListTitle");
+const statusListBody = document.getElementById("statusListBody");
+const statusListClose = document.getElementById("statusListClose");
+
+// Theme controls
+const themeToggle = document.getElementById("themeToggle");
+const themeDarkBtn = document.getElementById("themeDarkBtn");
+const themeLightBtn = document.getElementById("themeLightBtn");
+const themeSwitch = document.getElementById("themeSwitch");
 
 /* =========================
    3) App State
@@ -114,15 +107,44 @@ function uuid() {
 
 function fmt(n) {
   const v = Number.isFinite(n) ? n : 0;
-  return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return v.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
-/**
- * Accepts:
- *  - "1,234.56"
- *  - "1.234,56"
- *  - "1234,56"
- */
+function animateNumber(el, to, duration = 380) {
+  if (!el) return;
+
+  const target = Number(to) || 0;
+  const prev = Number(el.dataset.value || 0);
+
+  if (Math.abs(target - prev) < 0.01) {
+    el.textContent = fmt(target);
+    el.dataset.value = String(target);
+    return;
+  }
+
+  const start = performance.now();
+
+  function step(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    const current = prev + (target - prev) * eased;
+
+    el.textContent = fmt(current);
+
+    if (p < 1) {
+      requestAnimationFrame(step);
+    } else {
+      el.textContent = fmt(target);
+      el.dataset.value = String(target);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
 function parseMoney(value) {
   if (value == null) return 0;
 
@@ -136,10 +158,8 @@ function parseMoney(value) {
 
   if (lastComma !== -1 && lastDot !== -1) {
     if (lastComma > lastDot) {
-      // comma decimal, dots thousands
       s = s.replace(/\./g, "").replace(",", ".");
     } else {
-      // dot decimal, commas thousands
       s = s.replace(/,/g, "");
     }
   } else if (lastComma !== -1 && lastDot === -1) {
@@ -182,9 +202,7 @@ function getSavedSummaryCollapsed() {
 }
 
 function setSummaryCollapsed(v) {
-  if (summarySection) {
-    summarySection.classList.toggle("summary-collapsed", !!v);
-  }
+  rootEl.classList.toggle("summary-collapsed", !!v);
   try {
     localStorage.setItem(SUMMARY_COLLAPSED_KEY, v ? "1" : "0");
   } catch {}
@@ -208,12 +226,6 @@ function startOfDay(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-function addDays(d, n) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-
 function daysBetweenInclusive(a, b) {
   const ms = startOfDay(b) - startOfDay(a);
   return Math.floor(ms / 86400000) + 1;
@@ -224,27 +236,23 @@ function parseDateOnly(dateStr) {
 
   const s = String(dateStr).trim();
 
-  // YYYY-MM-DD
   if (s.includes("-")) {
     const parts = s.split("-");
     if (parts.length === 3) {
       const y = Number(parts[0]);
       const m = Number(parts[1]) - 1;
       const d = Number(parts[2]);
-
       const out = new Date(y, m, d);
       if (!Number.isNaN(out.getTime())) return out;
     }
   }
 
-  // DD/MM/YYYY
   if (s.includes("/")) {
     const parts = s.split("/");
     if (parts.length === 3) {
       const d = Number(parts[0]);
       const m = Number(parts[1]) - 1;
       const y = Number(parts[2]);
-
       const out = new Date(y, m, d);
       if (!Number.isNaN(out.getTime())) return out;
     }
@@ -316,160 +324,204 @@ function getOverlapDaysInclusive(periodFrom, periodTo, monthStart, monthEnd) {
   return daysBetweenInclusive(start, end);
 }
 
-  function calcMonthlyTotals(monthKey, mode = appState.grandMode) {
-  if (!monthKey) return { gross: 0, net: 0, my: 0 };
-
-  const monthStart = getMonthStart(monthKey);
-  const monthEnd = getMonthEnd(monthKey);
-  const groups = mode === "all" ? appState.groups : [activeGroup()];
-  const totals = { gross: 0, net: 0, my: 0 };
-
-  groups.forEach((gr) => {
-    const st = gr.data;
-
-    (st.periods || []).forEach((p) => {
-      const from = parseDateOnly(p.from);
-      const to = parseDateOnly(p.to);
-      if (!from || !to || to < from) return;
-
-      const totalDays = daysBetweenInclusive(from, to);
-      const overlapDays = getOverlapDaysInclusive(from, to, monthStart, monthEnd);
-      if (overlapDays <= 0 || totalDays <= 0) return;
-
-      const ratio = overlapDays / totalDays;
-      const t = calcPeriodTotals(p, st.defaultRatePercent);
-
-      totals.gross += t.gross * ratio;
-      totals.net += t.net * ratio;
-      totals.my += t.my * ratio;
-    });
-  });
-
-  return totals;
+function formatDateLocal(d) {
+  if (!d) return "—";
+  const parts = d.split("-");
+  if (parts.length !== 3) return d;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-  function calcMonthlyStatus(monthKey, mode = appState.grandMode) {
-  if (!monthKey) return { done: 0, fail: 0 };
+function formatPeriodPreview(from, to) {
+  const left = formatDateLocal(from);
+  const right = formatDateLocal(to);
+  return `${left} → ${right}`;
+}
 
-  const monthStart = getMonthStart(monthKey);
-  const monthEnd = getMonthEnd(monthKey);
-  const groups = mode === "all" ? appState.groups : [activeGroup()];
+  function getClientsByStatus(status) {
+  const list = [];
+  const groups = appState.grandMode === "all"
+    ? appState.groups
+    : [activeGroup()];
 
-  let done = 0;
-  let fail = 0;
-
-  groups.forEach((gr) => {
-    (gr.data.periods || []).forEach((p) => {
-      const from = parseDateOnly(p.from);
-      const to = parseDateOnly(p.to);
-
-      if (!from || !to || to < from) return;
-
-      const overlapDays = getOverlapDaysInclusive(from, to, monthStart, monthEnd);
-      if (overlapDays <= 0) return;
-
-      (p.rows || []).forEach((r) => {
-        if (r.done === "done") done++;
-        if (r.done === "fail") fail++;
+  groups.forEach((group) => {
+    (group.data?.periods || []).forEach((period) => {
+      (period.rows || []).forEach((row) => {
+        if (row.done === status) {
+          list.push({
+            groupId: group.id,
+            groupName: group.name,
+            periodId: period.id,
+            periodFrom: period.from,
+            periodTo: period.to,
+            rowId: row.id,
+            customer: row.customer || "Client",
+            city: row.city || ""
+          });
+        }
       });
     });
   });
 
-  return { done, fail };
+  return list;
 }
 
-
- function renderMonthlyStats() {
-  if (!monthLabel || !monthGrossEl || !monthNetEl || !monthMyEl) return;
-
-  const keys = getAllMonthKeysForMode(appState.grandMode);
-  const currentKey = getCurrentMonthKey(appState.grandMode);
-  const totals = calcMonthlyTotals(currentKey, appState.grandMode);
-  const status = calcMonthlyStatus(currentKey, appState.grandMode);
-
-  const doneEl = document.getElementById("monthDone");
-  const failEl = document.getElementById("monthFail");
-
-  monthLabel.textContent = formatMonthKey(currentKey);
-  monthGrossEl.textContent = fmt(totals.gross);
-  monthNetEl.textContent = fmt(totals.net);
-  monthMyEl.textContent = fmt(totals.my);
-
-  if (doneEl) doneEl.textContent = status.done;
-  if (failEl) failEl.textContent = status.fail;
-
-  if (monthPrevBtn) monthPrevBtn.disabled = !currentKey || currentKey === keys[0];
-  if (monthNextBtn) monthNextBtn.disabled = !currentKey || currentKey === keys[keys.length - 1];
+function closeStatusListModal() {
+  if (!statusListModal) return;
+  statusListModal.style.display = "none";
+  if (statusListBody) statusListBody.innerHTML = "";
 }
 
-function shiftMonthCursor(dir) {
-  const keys = getAllMonthKeysForMode(appState.grandMode);
-  if (!keys.length) return;
+function openStatusListModal(status, clients) {
+  if (!statusListModal || !statusListTitle || !statusListBody) return;
 
-  const currentKey = getCurrentMonthKey(appState.grandMode);
-  let idx = keys.indexOf(currentKey);
-  if (idx === -1) idx = keys.length - 1;
+  const statusLabel =
+    status === "done" ? "Done" :
+    status === "fail" ? "Fail" :
+    status === "fixed" ? "Fixed" :
+    "Status";
+    const statusColor =
+  status === "done" ? "status-badge-done" :
+  status === "fail" ? "status-badge-fail" :
+  status === "fixed" ? "status-badge-fixed" :
+  "";
 
-  idx += dir;
-  if (idx < 0) idx = 0;
-  if (idx > keys.length - 1) idx = keys.length - 1;
+  statusListTitle.innerHTML = `
+  <span class="status-badge ${statusColor}">
+    ${statusLabel}
+  </span>
+`;
 
-  setSavedMonthCursor(keys[idx]);
-  renderMonthlyStats();
-}
+  if (!clients.length) {
+    statusListBody.innerHTML = `<div class="status-list-empty">ამ სტატუსით კლიენტი ვერ მოიძებნა.</div>`;
+    statusListModal.style.display = "flex";
+    return;
+  }
+  
+  function goToClientFromStatusList(item) {
+  if (!item) return;
 
-function initSummaryPanel() {
-  setSummaryCollapsed(getSavedSummaryCollapsed());
+  appState.activeGroupId = item.groupId;
+  saveState();
 
-  summaryCollapseBtn?.addEventListener("click", () => {
-    const collapsed = summarySection?.classList.contains("summary-collapsed");
-    setSummaryCollapsed(!collapsed);
+  setPeriodCollapsed(item.periodId, false);
+  setMode("edit");
+  render();
+
+  requestAnimationFrame(() => {
+    const periodEl = document.querySelector(`.period[data-period-id="${item.periodId}"]`);
+    const rowEl = document.querySelector(`tr[data-row-id="${item.rowId}"]`);
+
+    if (periodEl) {
+      periodEl.classList.remove("is-collapsed");
+    }
+
+    if (rowEl) {
+      rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      rowEl.classList.add("row-highlight");
+
+      setTimeout(() => {
+        rowEl.classList.remove("row-highlight");
+      }, 1800);
+    }
   });
+}
 
-  monthPrevBtn?.addEventListener("click", () => shiftMonthCursor(-1));
-  monthNextBtn?.addEventListener("click", () => shiftMonthCursor(1));
+function bindStatusListItemClicks(clients) {
+  const items = document.querySelectorAll(".status-list-item");
+
+  items.forEach((el, index) => {
+    const item = clients[index];
+    if (!item) return;
+
+    el.onclick = async () => {
+        closeStatusListModal();
+
+    const ok = await askConfirm(
+        "Do you really want to go to Edit?",
+        "Edit"
+       );
+
+     if (!ok) return;
+
+         goToClientFromStatusList(item);
+     };
+  });
+}
+
+  statusListBody.innerHTML = clients.map((item) => `
+    <div class="status-list-item">
+      <div class="status-list-name">${escapeHtml(item.customer)}</div>
+      <div class="status-list-meta">
+        <span><b>City:</b> ${escapeHtml(item.city || "—")}</span>
+        <span><b>Period:</b> ${escapeHtml(formatDateLocal(item.periodFrom))} → ${escapeHtml(formatDateLocal(item.periodTo))}</span>
+        <span><b>Group:</b> ${escapeHtml(item.groupName)}</span>
+      </div>
+    </div>
+  `).join("");
+
+  statusListModal.style.display = "flex";
+  bindStatusListItemClicks(clients);
 }
 
 /* =========================
-   5) Theme (Dark/Light)
+   5) Theme
 ========================= */
 
 function getSavedTheme() {
-  try { return localStorage.getItem(THEME_KEY); } catch { return null; }
+  try {
+    return localStorage.getItem(THEME_KEY);
+  } catch {
+    return null;
+  }
 }
 
 function setTheme(theme) {
   const t = theme === "light" ? "light" : "dark";
-  document.body.dataset.theme = t;
+  rootEl.setAttribute("data-theme", t);
 
-  try { localStorage.setItem(THEME_KEY, t); } catch {}
+  try {
+    localStorage.setItem(THEME_KEY, t);
+  } catch {}
 
-  // sync checkbox (if exists)
   if (themeSwitch && "checked" in themeSwitch) {
     themeSwitch.checked = t === "light";
   }
 
-  // sync optional buttons
   themeDarkBtn?.classList.toggle("active", t === "dark");
   themeLightBtn?.classList.toggle("active", t === "light");
 }
 
 function toggleTheme() {
-  const cur = document.body.dataset.theme === "light" ? "light" : "dark";
+  const cur = rootEl.getAttribute("data-theme") === "light" ? "light" : "dark";
   setTheme(cur === "light" ? "dark" : "light");
 }
 
 function initTheme() {
-  setTheme(getSavedTheme() || "dark");
+  const t = getSavedTheme() || "dark";
+  setTheme(t);
 
   themeToggle?.addEventListener("click", toggleTheme);
-  themeDarkBtn?.addEventListener("click", () => setTheme("dark"));
-  themeLightBtn?.addEventListener("click", () => setTheme("light"));
-  themeSwitch?.addEventListener("change", () => setTheme(themeSwitch.checked ? "light" : "dark"));
+  themeDarkBtn?.addEventListener("click", () => {
+    setTheme("dark");
+    render();
+    if (appState.uiMode === "review") renderReview();
+  });
+
+  themeLightBtn?.addEventListener("click", () => {
+    setTheme("light");
+    render();
+    if (appState.uiMode === "review") renderReview();
+  });
+
+  themeSwitch?.addEventListener("change", () => {
+    setTheme(themeSwitch.checked ? "light" : "dark");
+    render();
+    if (appState.uiMode === "review") renderReview();
+  });
 }
 
 /* =========================
-   6) Confirm Modal (Yes/No)
+   6) Confirm Modal
 ========================= */
 
 function hasCustomConfirm() {
@@ -495,15 +547,28 @@ function askConfirm(message, title = "Confirm") {
       document.onkeydown = null;
     };
 
-    confirmNoBtn.onclick = () => { cleanup(); resolve(false); };
-    confirmYesBtn.onclick = () => { cleanup(); resolve(true); };
+    confirmNoBtn.onclick = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    confirmYesBtn.onclick = () => {
+      cleanup();
+      resolve(true);
+    };
 
     confirmBackdrop.onclick = (e) => {
-      if (e.target === confirmBackdrop) { cleanup(); resolve(false); }
+      if (e.target === confirmBackdrop) {
+        cleanup();
+        resolve(false);
+      }
     };
 
     document.onkeydown = (e) => {
-      if (e.key === "Escape") { cleanup(); resolve(false); }
+      if (e.key === "Escape") {
+        cleanup();
+        resolve(false);
+      }
     };
   });
 }
@@ -512,8 +577,8 @@ function askConfirm(message, title = "Confirm") {
    7) Data Model
 ========================= */
 
-    function emptyRow() {
-  return { id: uuid(), customer: "", city: "", gross: "", net: "", done:"none" };
+function emptyRow() {
+  return { id: uuid(), customer: "", city: "", gross: "", net: "", done: "none" };
 }
 
 function defaultGroupData() {
@@ -528,8 +593,8 @@ function defaultAppState() {
   return {
     activeGroupId: g1.id,
     groups: [g1],
-    grandMode: "active", // "active" | "all"
-    uiMode: "review",    // "edit" | "review"
+    grandMode: "active",
+    uiMode: "review",
   };
 }
 
@@ -546,16 +611,18 @@ function normalizeGroupData(d) {
     from: p?.from || "",
     to: p?.to || "",
     rows:
-  Array.isArray(p?.rows) && p.rows.length
-    ? p.rows.map((r) => ({
-        id: r?.id || uuid(),
-        customer: r?.customer ?? "",
-        city: r?.city ?? "",
-        gross: r?.gross ?? "",
-        net: r?.net ?? "",
-        done: ["none", "done", "fail"].includes(r?.done) ? r.done : (r?.done === true ? "done" : "none"),
-      }))
-    : [emptyRow()],
+      Array.isArray(p?.rows) && p.rows.length
+        ? p.rows.map((r) => ({
+            id: r?.id || uuid(),
+            customer: r?.customer ?? "",
+            city: r?.city ?? "",
+            gross: r?.gross ?? "",
+            net: r?.net ?? "",
+            done: ["none", "done", "fail", "fixed"].includes(r?.done)
+              ? r.done
+              : (r?.done === true ? "done" : "none"),
+          }))
+        : [emptyRow()],
   }));
 
   return out;
@@ -585,7 +652,9 @@ function normalizeAppState(s) {
 }
 
 function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+  } catch {}
 }
 
 function loadState() {
@@ -627,126 +696,42 @@ function setPeriodCollapsed(periodId, collapsed) {
   saveCollapsedPeriods(map);
 }
 
-   function formatDateLocal(d){
-  if(!d) return "—";
-
-  const parts = d.split("-");
-  if(parts.length !== 3) return d;
-
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-}
-
-function formatPeriodPreview(from, to) {
-  const left = formatDateLocal(from);
-  const right = formatDateLocal(to);
-  return `${left} → ${right}`;
-}
-
- function updateFloatingAddClientVisibility() {
-  const allPeriods = elPeriods?.querySelectorAll?.(".period") ?? [];
-  if (!allPeriods.length) {
-    document.body.classList.remove("all-periods-collapsed");
-    return;
-  }
-
-  const hasOpenPeriod = [...allPeriods].some((sec) => !sec.classList.contains("is-collapsed"));
-  document.body.classList.toggle("all-periods-collapsed", !hasOpenPeriod);
-}
-
-function periodsStrictlyOverlap(aFrom, aTo, bFrom, bTo) {
-  if (!aFrom || !aTo || !bFrom || !bTo) return false;
-
-  const aStart = parseDateOnly(aFrom);
-  const aEnd = parseDateOnly(aTo);
-  const bStart = parseDateOnly(bFrom);
-  const bEnd = parseDateOnly(bTo);
-
-  if (!aStart || !aEnd || !bStart || !bEnd) return false;
-  if (aEnd < aStart || bEnd < bStart) return false;
-
-  // strict overlap only
-  // touching edges is allowed:
-  // aEnd === bStart  -> OK
-  // aStart === bEnd  -> OK
-  return aStart < bEnd && aEnd > bStart;
-}
-
-function hasOverlappingPeriodInActiveGroup(periodId, from, to) {
-  const g = activeGroup();
-  const periods = g?.data?.periods || [];
-
-  return periods.some((p) => {
-    if (!p || p.id === periodId) return false;
-    return periodsStrictlyOverlap(from, to, p.from, p.to);
-  });
-}
-
-function isPeriodReversed(from, to) {
-  if (!from || !to) return false;
-
-  const fromDate = parseDateOnly(from);
-  const toDate = parseDateOnly(to);
-
-  if (!fromDate || !toDate) return false;
-  return fromDate > toDate;
-}
-
-async function validatePeriodWarnings(periodId, from, to, revertFn) {
-  if (from && to && isPeriodReversed(from, to)) {
-    const ok = await askConfirm(
-      "From date is later than To date. Is that correct?",
-      "Invalid period"
-    );
-
-    if (!ok) {
-      revertFn();
-      return false;
-    }
-  }
-
-  if (from && to && hasOverlappingPeriodInActiveGroup(periodId, from, to)) {
-    const ok = await askConfirm(
-      "This period overlaps with another period in this group. Is that correct?",
-      "Overlapping period"
-    );
-
-    if (!ok) {
-      revertFn();
-      return false;
-    }
-  }
-
-  return true;
-}
-
 /* =========================
-   8) Controls Collapse
+   8) Collapse helpers
 ========================= */
 
 function setControlsCollapsed(v) {
-  document.body.classList.toggle("controls-collapsed", !!v);
-  try { localStorage.setItem(CONTROLS_KEY, v ? "1" : "0"); } catch {}
+  rootEl.classList.toggle("controls-collapsed", !!v);
+  try {
+    localStorage.setItem(CONTROLS_KEY, v ? "1" : "0");
+  } catch {}
 }
 
 function initControlsToggle() {
-  const saved = (() => {
-    try { return localStorage.getItem(CONTROLS_KEY); } catch { return null; }
-  })();
-
-  const defaultCollapsed = window.matchMedia?.("(max-width: 720px)")?.matches ? true : false;
-  setControlsCollapsed(saved === null ? defaultCollapsed : saved === "1");
-
   controlsToggle?.addEventListener("click", () => {
-    setControlsCollapsed(!document.body.classList.contains("controls-collapsed"));
+    const next = !rootEl.classList.contains("controls-collapsed");
+    setControlsCollapsed(next);
   });
 }
 
+function initSummaryPanel() {
+  setSummaryCollapsed(getSavedSummaryCollapsed());
+
+  summaryCollapseBtn?.addEventListener("click", () => {
+    const next = !rootEl.classList.contains("summary-collapsed");
+    setSummaryCollapsed(next);
+  });
+
+  monthPrevBtn?.addEventListener("click", () => shiftMonthCursor(-1));
+  monthNextBtn?.addEventListener("click", () => shiftMonthCursor(1));
+}
+
 /* =========================
-   9) UI Helpers
+   9) UI helpers
 ========================= */
 
-function syncBodyModeClass(mode = appState.uiMode) {
-  document.body.classList.toggle("is-edit", mode === "edit");
+function syncRootModeClass(mode = appState.uiMode) {
+  rootEl.classList.toggle("is-edit", mode === "edit");
 }
 
 function renderGroupSelect() {
@@ -765,15 +750,25 @@ function renderGroupSelect() {
 
 function updateGrandToggleUI() {
   if (!totalsActiveBtn || !totalsAllBtn) return;
-
   const isAll = appState.grandMode === "all";
   totalsActiveBtn.classList.toggle("active", !isAll);
   totalsAllBtn.classList.toggle("active", isAll);
 }
 
+function updateFloatingAddClientVisibility() {
+  const allPeriods = elPeriods?.querySelectorAll?.(".period") ?? [];
+  if (!allPeriods.length) {
+    rootEl.classList.remove("all-periods-collapsed");
+    return;
+  }
+
+  const hasOpenPeriod = [...allPeriods].some((sec) => !sec.classList.contains("is-collapsed"));
+  rootEl.classList.toggle("all-periods-collapsed", !hasOpenPeriod);
+}
+
 function setControlsForMode(mode) {
   const isEdit = mode === "edit";
-  syncBodyModeClass(mode);
+  syncRootModeClass(mode);
 
   const enableAlways = [modeEditBtn, modeReviewBtn, totalsActiveBtn, totalsAllBtn, controlsToggle];
   const enableInReview = [groupSelect, exportBtn, exportAllBtn, pdfAllBtn];
@@ -804,13 +799,11 @@ function setControlsForMode(mode) {
   enableAlways.forEach((el) => setEl(el, true));
   (isEdit ? enableInEdit : enableInReview).forEach((el) => setEl(el, true));
 
-  // show import inputs only in edit
   const importLabelEl = importInput?.closest("label");
   const importAllLabelEl = importAllInput?.closest("label");
   if (importLabelEl) importLabelEl.style.display = isEdit ? "" : "none";
   if (importAllLabelEl) importAllLabelEl.style.display = isEdit ? "" : "none";
 
-  // show PDF only in review
   if (pdfAllBtn) pdfAllBtn.style.display = isEdit ? "none" : "";
 }
 
@@ -822,17 +815,22 @@ function setMode(mode) {
   modeReviewBtn?.classList.toggle("active", appState.uiMode === "review");
 
   if (editView && reviewView) {
-    if (appState.uiMode === "review") {
-      editView.hidden = true;
-      reviewView.hidden = false;
-      renderReview();
-    } else {
-      reviewView.hidden = true;
-      editView.hidden = false;
-    }
+  const globalSearchCard = document.getElementById("globalSearchCard");
+
+  if (appState.uiMode === "review") {
+    editView.hidden = true;
+    reviewView.hidden = false;
+    if (globalSearchCard) globalSearchCard.hidden = false;
+    renderReview();
+  } else {
+    reviewView.hidden = true;
+    reviewView.innerHTML = "";
+    if (globalSearchCard) globalSearchCard.hidden = true;
+    editView.hidden = false;
   }
-   
-   setControlsForMode(appState.uiMode);
+}
+
+  setControlsForMode(appState.uiMode);
   updateFloatingAddClientVisibility();
 }
 
@@ -879,32 +877,125 @@ function calcGrandTotalsAllGroups() {
   return grand;
 }
 
+function calcMonthlyTotals(monthKey, mode = appState.grandMode) {
+  if (!monthKey) return { gross: 0, net: 0, my: 0 };
+
+  const monthStart = getMonthStart(monthKey);
+  const monthEnd = getMonthEnd(monthKey);
+  const groups = mode === "all" ? appState.groups : [activeGroup()];
+  const totals = { gross: 0, net: 0, my: 0 };
+
+  groups.forEach((gr) => {
+    const st = gr.data;
+
+    (st.periods || []).forEach((p) => {
+      const from = parseDateOnly(p.from);
+      const to = parseDateOnly(p.to);
+      if (!from || !to || to < from) return;
+
+      const totalDays = daysBetweenInclusive(from, to);
+      const overlapDays = getOverlapDaysInclusive(from, to, monthStart, monthEnd);
+      if (overlapDays <= 0 || totalDays <= 0) return;
+
+      const ratio = overlapDays / totalDays;
+      const t = calcPeriodTotals(p, st.defaultRatePercent);
+
+      totals.gross += t.gross * ratio;
+      totals.net += t.net * ratio;
+      totals.my += t.my * ratio;
+    });
+  });
+
+  return totals;
+}
+
+function calcMonthlyStatus(monthKey, mode = appState.grandMode) {
+  const groups = mode === "all" ? appState.groups : [activeGroup()];
+
+  let done = 0;
+  let fail = 0;
+  let fixed = 0;
+
+  groups.forEach((gr) => {
+    (gr.data?.periods || []).forEach((p) => {
+      (p.rows || []).forEach((r) => {
+        if (r.done === "done") done++;
+        else if (r.done === "fail") fail++;
+        else if (r.done === "fixed") fixed++;
+      });
+    });
+  });
+
+  return { done, fail, fixed };
+}
+
+function renderMonthlyStats() {
+  if (!monthLabel || !monthGrossEl || !monthNetEl || !monthMyEl) return;
+
+  const keys = getAllMonthKeysForMode(appState.grandMode);
+  const currentKey = getCurrentMonthKey(appState.grandMode);
+  const totals = calcMonthlyTotals(currentKey, appState.grandMode);
+  const status = calcMonthlyStatus(currentKey, appState.grandMode);
+
+  const doneEl = document.getElementById("monthDone");
+  const failEl = document.getElementById("monthFail");
+  const fixedEl = document.getElementById("monthFixed");
+
+  monthLabel.textContent = formatMonthKey(currentKey);
+  animateNumber(monthGrossEl, totals.gross);
+  animateNumber(monthNetEl, totals.net);
+  animateNumber(monthMyEl, totals.my);
+
+  if (doneEl) doneEl.textContent = status.done;
+  if (failEl) failEl.textContent = status.fail;
+  if (fixedEl) fixedEl.textContent = status.fixed;
+
+  if (monthPrevBtn) monthPrevBtn.disabled = !currentKey || currentKey === keys[0];
+  if (monthNextBtn) monthNextBtn.disabled = !currentKey || currentKey === keys[keys.length - 1];
+}
+
+function shiftMonthCursor(dir) {
+  const keys = getAllMonthKeysForMode(appState.grandMode);
+  if (!keys.length) return;
+
+  const currentKey = getCurrentMonthKey(appState.grandMode);
+  let idx = keys.indexOf(currentKey);
+  if (idx === -1) idx = keys.length - 1;
+
+  idx += dir;
+  if (idx < 0) idx = 0;
+  if (idx > keys.length - 1) idx = keys.length - 1;
+
+  setSavedMonthCursor(keys[idx]);
+  renderMonthlyStats();
+}
+
 function recalcAndRenderTotals() {
   const g = activeGroup();
   const st = g.data;
 
-  const grand =
-    appState.grandMode === "all" ? calcGrandTotalsAllGroups() : calcGrandTotalsActiveGroup();
+  const grand = appState.grandMode === "all"
+    ? calcGrandTotalsAllGroups()
+    : calcGrandTotalsActiveGroup();
 
- if (grandGrossEl){
-  grandGrossEl.textContent = fmt(grand.gross);
-  grandGrossEl.classList.add("total-flash");
-  setTimeout(()=>grandGrossEl.classList.remove("total-flash"),280);
-}
+  if (grandGrossEl) {
+    animateNumber(grandGrossEl, grand.gross);
+    grandGrossEl.classList.add("total-flash");
+    setTimeout(() => grandGrossEl.classList.remove("total-flash"), 280);
+  }
 
-if (grandNetEl){
-  grandNetEl.textContent = fmt(grand.net);
-  grandNetEl.classList.add("total-flash");
-  setTimeout(()=>grandNetEl.classList.remove("total-flash"),280);
-}
+  if (grandNetEl) {
+    animateNumber(grandNetEl, grand.net);
+    grandNetEl.classList.add("total-flash");
+    setTimeout(() => grandNetEl.classList.remove("total-flash"), 280);
+  }
 
-if (grandMyEl){
-  grandMyEl.textContent = fmt(grand.my);
-  grandMyEl.classList.add("total-flash");
-  setTimeout(()=>grandMyEl.classList.remove("total-flash"),280);
-}
+  if (grandMyEl) {
+    animateNumber(grandMyEl, grand.my);
+    grandMyEl.classList.add("total-flash");
+    setTimeout(() => grandMyEl.classList.remove("total-flash"), 280);
+  }
 
-  // Period totals always reflect ACTIVE group
   const periodSections = elPeriods?.querySelectorAll?.(".period") ?? [];
   periodSections.forEach((sec, i) => {
     const p = st.periods[i];
@@ -918,11 +1009,76 @@ if (grandMyEl){
     if (nEl) nEl.textContent = fmt(t.net);
     if (mEl) mEl.textContent = fmt(t.my);
   });
+
   renderMonthlyStats();
 }
 
 /* =========================
-   11) Render: EDIT
+   11) Period validation
+========================= */
+
+function periodsStrictlyOverlap(aFrom, aTo, bFrom, bTo) {
+  if (!aFrom || !aTo || !bFrom || !bTo) return false;
+
+  const aStart = parseDateOnly(aFrom);
+  const aEnd = parseDateOnly(aTo);
+  const bStart = parseDateOnly(bFrom);
+  const bEnd = parseDateOnly(bTo);
+
+  if (!aStart || !aEnd || !bStart || !bEnd) return false;
+  if (aEnd < aStart || bEnd < bStart) return false;
+
+  return aStart < bEnd && aEnd > bStart;
+}
+
+function hasOverlappingPeriodInActiveGroup(periodId, from, to) {
+  const g = activeGroup();
+  const periods = g?.data?.periods || [];
+
+  return periods.some((p) => {
+    if (!p || p.id === periodId) return false;
+    return periodsStrictlyOverlap(from, to, p.from, p.to);
+  });
+}
+
+function isPeriodReversed(from, to) {
+  if (!from || !to) return false;
+
+  const fromDate = parseDateOnly(from);
+  const toDate = parseDateOnly(to);
+
+  if (!fromDate || !toDate) return false;
+  return fromDate > toDate;
+}
+
+async function validatePeriodWarnings(periodId, from, to, revertFn) {
+  if (from && to && isPeriodReversed(from, to)) {
+    const ok = await askConfirm(
+      "From date is later than To date. Is that correct?",
+      "Invalid period"
+    );
+    if (!ok) {
+      revertFn();
+      return false;
+    }
+  }
+
+  if (from && to && hasOverlappingPeriodInActiveGroup(periodId, from, to)) {
+    const ok = await askConfirm(
+      "This period overlaps with another period in this group. Is that correct?",
+      "Overlapping period"
+    );
+    if (!ok) {
+      revertFn();
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/* =========================
+   12) Render: EDIT
 ========================= */
 
 function render() {
@@ -949,7 +1105,6 @@ function render() {
     const collapseMeta = node.querySelector(".period-range-preview");
     const collapseGroupPreview = node.querySelector(".period-group-preview");
     const groupBox = node.querySelector(".period-group-box");
-    const bodyWrap = node.querySelector(".period-body-wrap");
 
     const fromEl = node.querySelector(".fromDate");
     const toEl = node.querySelector(".toDate");
@@ -964,183 +1119,168 @@ function render() {
 
     if (fromEl) fromEl.value = p.from;
     if (toEl) toEl.value = p.to;
-    
+
     if (collapseMeta) {
-  collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
-}
+      collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
+    }
 
     if (collapseGroupPreview) {
-  collapseGroupPreview.textContent = g.name || "Group";
-}
+      collapseGroupPreview.textContent = g.name || "Group";
+    }
 
-if (groupBox) {
-  groupBox.textContent = `Group: ${g.name || "Group"}`;
-}
+    if (groupBox) {
+      groupBox.textContent = `Group: ${g.name || "Group"}`;
+    }
 
-if (section) {
-  section.classList.toggle("is-collapsed", isPeriodCollapsed(p.id));
-}
+    if (section) {
+      const collapsed = isPeriodCollapsed(p.id);
+      section.classList.toggle("is-collapsed", collapsed);
+      section.dataset.index = String(idx + 1);
+      section.dataset.periodId = p.id;
+    }
 
-   collapseBtn?.addEventListener("click", () => {
-  const next = !section.classList.contains("is-collapsed");
-  section.classList.toggle("is-collapsed", next);
-  setPeriodCollapsed(p.id, next);
-  updateFloatingAddClientVisibility();
-});
+    collapseBtn?.addEventListener("click", () => {
+      const next = !section.classList.contains("is-collapsed");
+      section.classList.toggle("is-collapsed", next);
+      setPeriodCollapsed(p.id, next);
+      updateFloatingAddClientVisibility();
+    });
 
     fromEl?.addEventListener("change", async () => {
-  const oldFrom = p.from;
-  const nextFrom = fromEl.value;
+      const oldFrom = p.from;
+      p.from = fromEl.value;
 
-  p.from = nextFrom;
-  
-  if (collapseMeta) {
-  collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
-}
+      if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
 
-  const ok = await validatePeriodWarnings(
-    p.id,
-    p.from,
-    p.to,
-    () => {
-  p.from = oldFrom;
-  fromEl.value = oldFrom || "";
-  if (collapseMeta) {
-    collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
-       }
-    }
-  );
+      const ok = await validatePeriodWarnings(p.id, p.from, p.to, () => {
+        p.from = oldFrom;
+        fromEl.value = oldFrom || "";
+        if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
+      });
 
-  if (!ok) return;
+      if (!ok) return;
 
-  saveState();
-  recalcAndRenderTotals();
-  if (appState.uiMode === "review") renderReview();
-});
+      saveState();
+      recalcAndRenderTotals();
+      if (appState.uiMode === "review") renderReview();
+    });
 
     toEl?.addEventListener("change", async () => {
-  const oldTo = p.to;
-  const nextTo = toEl.value;
+      const oldTo = p.to;
+      p.to = toEl.value;
 
-  p.to = nextTo;
-  
-  if (collapseMeta) {
-  collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
-  }
+      if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
 
-  const ok = await validatePeriodWarnings(
-    p.id,
-    p.from,
-    p.to,
-    () => {
-     p.to = oldTo;
-     toEl.value = oldTo || "";
-     if (collapseMeta) {
-       collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
-     }
-   }
-  );
+      const ok = await validatePeriodWarnings(p.id, p.from, p.to, () => {
+        p.to = oldTo;
+        toEl.value = oldTo || "";
+        if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
+      });
 
-  if (!ok) return;
+      if (!ok) return;
 
-  saveState();
-  recalcAndRenderTotals();
-  if (appState.uiMode === "review") renderReview();
-});
+      saveState();
+      recalcAndRenderTotals();
+      if (appState.uiMode === "review") renderReview();
+    });
 
     if (rowsTbody) rowsTbody.innerHTML = "";
 
-   p.rows.forEach((r) => {
-  const rowNode = tplRow.content.cloneNode(true);
-  const tr = rowNode.querySelector("tr");
+    p.rows.forEach((r) => {
+      const rowNode = tplRow.content.cloneNode(true);
+      const tr = rowNode.querySelector("tr");
+      if (tr) {
+  tr.dataset.rowId = r.id;
+}
 
-  const custEl = rowNode.querySelector(".cust");
-  const cityEl = rowNode.querySelector(".city");
-  const grossEl = rowNode.querySelector(".gross");
-  const netEl = rowNode.querySelector(".net");
-  const doneBtn = rowNode.querySelector(".doneBtn");
-  const removeRowBtn = rowNode.querySelector(".removeRow");
+      const custEl = rowNode.querySelector(".cust");
+      const cityEl = rowNode.querySelector(".city");
+      const grossEl = rowNode.querySelector(".gross");
+      const netEl = rowNode.querySelector(".net");
+      const doneBtn = rowNode.querySelector(".doneBtn");
+      const removeRowBtn = rowNode.querySelector(".removeRow");
 
-  if (custEl) custEl.value = r.customer ?? "";
-  if (cityEl) cityEl.value = r.city ?? "";
-  if (grossEl) grossEl.value = r.gross ?? "";
-  if (netEl) netEl.value = r.net ?? "";
+      if (custEl) custEl.value = r.customer ?? "";
+      if (cityEl) cityEl.value = r.city ?? "";
+      if (grossEl) grossEl.value = r.gross ?? "";
+      if (netEl) netEl.value = r.net ?? "";
 
-  if (doneBtn) {
-    const state = ["none", "done", "fail"].includes(r.done) ? r.done : "none";
-    doneBtn.classList.remove("state-none", "state-done", "state-fail");
-    doneBtn.classList.add(`state-${state}`);
-  }
+      if (doneBtn) {
+        const state = ["none", "done", "fail", "fixed"].includes(r.done) ? r.done : "none";
+        doneBtn.classList.remove("state-none", "state-done", "state-fail", "state-fixed");
+        doneBtn.classList.add(`state-${state}`);
+      }
 
-  custEl?.addEventListener("input", () => {
-    r.customer = custEl.value;
-    saveState();
-  });
+      custEl?.addEventListener("input", () => {
+        r.customer = custEl.value;
+        saveState();
+      });
 
-  cityEl?.addEventListener("input", () => {
-    r.city = cityEl.value;
-    saveState();
-  });
+      cityEl?.addEventListener("input", () => {
+        r.city = cityEl.value;
+        saveState();
+      });
 
-  grossEl?.addEventListener("input", () => {
-    r.gross = grossEl.value;
-    recalcAndRenderTotals();
-    saveState();
-  });
+      grossEl?.addEventListener("input", () => {
+        r.gross = grossEl.value;
+        recalcAndRenderTotals();
+        saveState();
+      });
 
-  netEl?.addEventListener("input", () => {
-    r.net = netEl.value;
-    recalcAndRenderTotals();
-    saveState();
-  });
+      netEl?.addEventListener("input", () => {
+        r.net = netEl.value;
+        recalcAndRenderTotals();
+        saveState();
+      });
 
-  doneBtn?.addEventListener("click", () => {
-  const current = ["none", "done", "fail"].includes(r.done) ? r.done : "none";
+      doneBtn?.addEventListener("click", () => {
+        const current = ["none", "done", "fail", "fixed"].includes(r.done) ? r.done : "none";
 
-  if (current === "none") r.done = "done";
-  else if (current === "done") r.done = "fail";
-  else r.done = "none";
+        if (current === "none") r.done = "done";
+        else if (current === "done") r.done = "fail";
+        else if (current === "fail") r.done = "fixed";
+        else r.done = "none";
 
-  doneBtn.classList.remove("state-none", "state-done", "state-fail");
-  doneBtn.classList.add(`state-${r.done}`);
+        doneBtn.classList.remove("state-none", "state-done", "state-fail", "state-fixed");
+        doneBtn.classList.add(`state-${r.done}`);
 
-  saveState();
-  renderMonthlyStats();
+        saveState();
+        renderMonthlyStats();
 
-  if (appState.uiMode === "review") {
-    renderReview();
-  }
-});
+        if (appState.uiMode === "review") {
+          renderReview();
+        }
+      });
 
-  removeRowBtn?.addEventListener("click", async () => {
-    const ok = await askConfirm("Delete this client row?", "Delete row");
-    if (!ok) return;
+      removeRowBtn?.addEventListener("click", async () => {
+        const ok = await askConfirm("Delete this client row?", "Delete row");
+        if (!ok) return;
 
-    p.rows = p.rows.filter((x) => x.id !== r.id);
-    if (p.rows.length === 0) p.rows.push(emptyRow());
+        p.rows = p.rows.filter((x) => x.id !== r.id);
+        if (p.rows.length === 0) p.rows.push(emptyRow());
 
-    saveState();
-    render();
-    if (appState.uiMode === "review") renderReview();
-  });
+        saveState();
+        render();
+        if (appState.uiMode === "review") renderReview();
+      });
 
-  rowsTbody?.appendChild(tr);
-});
+      rowsTbody?.appendChild(tr);
+    });
 
     addRowBtn?.addEventListener("click", () => {
-  p.rows.push(emptyRow());
-  saveState();
-  render();
-  if (appState.uiMode === "review") renderReview();
+      p.rows.push(emptyRow());
+      saveState();
+      render();
+      if (appState.uiMode === "review") renderReview();
 
-  setTimeout(() => {
-    const inputs = elPeriods?.querySelectorAll?.("input.cust");
-    const lastInput = inputs?.[inputs.length - 1];
-    if (lastInput) lastInput.focus();
-  }, 50);
-});
+      setTimeout(() => {
+        const inputs = elPeriods?.querySelectorAll?.("input.cust");
+        const lastInput = inputs?.[inputs.length - 1];
+        if (lastInput) lastInput.focus();
+      }, 50);
+    });
 
-     addPeriodInlineBtn?.addEventListener("click", () => {
+    addPeriodInlineBtn?.addEventListener("click", () => {
       st.periods.push({
         id: uuid(),
         from: "",
@@ -1170,16 +1310,15 @@ if (section) {
     if (totalNetEl) totalNetEl.textContent = fmt(totals.net);
     if (myEurEl) myEurEl.textContent = fmt(totals.my);
 
-    if (section) section.dataset.index = String(idx + 1);
     elPeriods.appendChild(node);
   });
 
-     recalcAndRenderTotals();
+  recalcAndRenderTotals();
   updateFloatingAddClientVisibility();
 }
 
 /* =========================
-   12) Review Search
+   13) Review Search
 ========================= */
 
 let reviewSearchOutsideHandlerAttached = false;
@@ -1201,19 +1340,30 @@ function buildReviewSearchIndex() {
         if (!customer && !city) return;
 
         rows.push({
-          group: gName,
-          from,
-          to,
-          customer,
-          city,
-          gross: fmt(parseMoney(r?.gross)),
-          net: fmt(parseMoney(r?.net)),
-        });
+        group: gName,
+        from,
+        to,
+        customer,
+        city,
+        gross: fmt(parseMoney(r?.gross)),
+        net: fmt(parseMoney(r?.net)),
+        status: ["done", "fail", "fixed"].includes(r?.done) ? r.done : "none",
+       });
       });
     });
   });
 
   return rows;
+}
+
+  function highlightMatch(text, query) {
+  if (!query) return escapeHtml(text);
+
+  const safe = escapeHtml(text);
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const reg = new RegExp(`(${escapedQuery})`, "ig");
+
+  return safe.replace(reg, `<mark class="search-highlight">$1</mark>`);
 }
 
 function initReviewSearch() {
@@ -1234,7 +1384,7 @@ function initReviewSearch() {
     hide();
   };
 
-  const renderResults = (list) => {
+   const renderResults = (list, q) => {
     if (!list.length) {
       resultsEl.style.display = "block";
       resultsEl.innerHTML = `<div class="review-search-empty">No results</div>`;
@@ -1243,29 +1393,44 @@ function initReviewSearch() {
 
     resultsEl.style.display = "block";
     resultsEl.innerHTML = list.slice(0, 40).map(x => `
-      <div class="review-search-item">
-        <div class="review-search-name">${escapeHtml(x.customer || "Client")}</div>
-        <div class="review-search-meta">
-          <span><b>Group:</b> ${escapeHtml(x.group)}</span>
-          <span><b>Period:</b> ${escapeHtml(x.from)} → ${escapeHtml(x.to)}</span>
-          <span><b>City:</b> ${escapeHtml(x.city || "—")}</span>
-          <span><b>Gross:</b> ${escapeHtml(x.gross)}</span>
-          <span><b>Net:</b> ${escapeHtml(x.net)}</span>
-        </div>
-      </div>
-    `).join("");
+  <div class="review-search-item">
+    <div class="review-search-name-row">
+      <div class="review-search-name">${highlightMatch(x.customer || "Client", q)}</div>
+      ${
+        x.status === "done"
+          ? `<span class="search-status search-status-done">Done</span>`
+          : x.status === "fail"
+          ? `<span class="search-status search-status-fail">Fail</span>`
+          : x.status === "fixed"
+          ? `<span class="search-status search-status-fixed">Fixed</span>`
+          : ``
+      }
+    </div>
+
+    <div class="review-search-meta">
+      <span><b>Group:</b> ${escapeHtml(x.group)}</span>
+      <span><b>Period:</b> ${escapeHtml(x.from)} → ${escapeHtml(x.to)}</span>
+      <span><b>City:</b> ${highlightMatch(x.city || "—", q)}</span>
+      <span><b>Gross:</b> ${escapeHtml(x.gross)}</span>
+      <span><b>Net:</b> ${escapeHtml(x.net)}</span>
+    </div>
+  </div>
+`).join("");
   };
 
   searchEl.oninput = () => {
     const q = searchEl.value.trim().toLowerCase();
-    if (!q) { hide(); return; }
+    if (!q) {
+      hide();
+      return;
+    }
 
     const filtered = index.filter(x =>
       (x.customer || "").toLowerCase().includes(q) ||
       (x.city || "").toLowerCase().includes(q)
     );
 
-    renderResults(filtered);
+    renderResults(filtered, q);
   };
 
   searchEl.onkeydown = (e) => {
@@ -1280,7 +1445,6 @@ function initReviewSearch() {
       const currentSearch = document.getElementById("reviewSearch");
       const currentResults = document.getElementById("reviewSearchResults");
       if (!wrap || !currentSearch || !currentResults) return;
-
       if (wrap.contains(e.target)) return;
 
       currentSearch.value = "";
@@ -1291,7 +1455,7 @@ function initReviewSearch() {
 }
 
 /* =========================
-   13) Render: REVIEW
+   14) Render: REVIEW
 ========================= */
 
 function renderReview() {
@@ -1316,12 +1480,6 @@ function renderReview() {
   const header = `
     <section class="review-card">
       <div class="review-head">
-        <div class="review-search">
-          <input id="reviewSearch" class="review-search-input" type="text"
-            placeholder="Search client (name or city)..." autocomplete="off" />
-          <div id="reviewSearchResults" class="review-search-results" style="display:none;"></div>
-        </div>
-
         <div>
           <h3 class="review-title">${escapeHtml(g.name)} — Review</h3>
           <div class="review-sub">${groupTotals.periods} periods • ${groupTotals.clients} rows • Default ${fmt(st.defaultRatePercent)}%</div>
@@ -1351,34 +1509,35 @@ function renderReview() {
     const to = formatDateLocal(p.to) || "—";
 
     const clients = p.rows.map((r) => {
-  const name = r.customer?.trim() || "Client";
-  const city = r.city?.trim() || "—";
+      const name = r.customer?.trim() || "Client";
+      const city = r.city?.trim() || "—";
+      const state = ["none", "done", "fail", "fixed"].includes(r.done) ? r.done : "none";
 
-  const state = ["none", "done", "fail"].includes(r.done) ? r.done : "none";
+      let statusHtml = "";
+      if (state === "done") {
+        statusHtml = `<span class="review-status review-status-done">Done</span>`;
+      } else if (state === "fail") {
+        statusHtml = `<span class="review-status review-status-fail">Fail</span>`;
+      } else if (state === "fixed") {
+        statusHtml = `<span class="review-status review-status-fixed">Fixed</span>`;
+      }
 
-  let statusHtml = "";
-  if (state === "done") {
-    statusHtml = `<span class="review-status review-status-done">Done</span>`;
-  } else if (state === "fail") {
-    statusHtml = `<span class="review-status review-status-fail">Fail</span>`;
-  }
-
-  return `
-    <div class="client-item">
-      <div>
-        <div class="client-name-row">
-          <div class="client-name">${escapeHtml(name)}</div>
-          ${statusHtml}
+      return `
+        <div class="client-item">
+          <div>
+            <div class="client-name-row">
+              <div class="client-name">${escapeHtml(name)}</div>
+              ${statusHtml}
+            </div>
+            <div class="review-sub" style="margin:2px 0 0 0;">City: <b>${escapeHtml(city)}</b></div>
+          </div>
+          <div class="client-values">
+            <span>Gross:</span> <b>${fmt(parseMoney(r.gross))}</b>
+            <span>Net:</span> <b>${fmt(parseMoney(r.net))}</b>
+          </div>
         </div>
-        <div class="review-sub" style="margin:2px 0 0 0;">City: <b>${escapeHtml(city)}</b></div>
-      </div>
-      <div class="client-values">
-        <span>Gross:</span> <b>${fmt(parseMoney(r.gross))}</b>
-        <span>Net:</span> <b>${fmt(parseMoney(r.net))}</b>
-      </div>
-    </div>
-  `;
-}).join("");
+      `;
+    }).join("");
 
     return `
       <details class="period-card">
@@ -1409,7 +1568,7 @@ function renderReview() {
 }
 
 /* =========================
-   14) File Helpers
+   15) File Helpers
 ========================= */
 
 function downloadJson(filename, dataObj) {
@@ -1433,7 +1592,7 @@ function nowStamp() {
 }
 
 /* =========================
-   15) Import ALL — Merge logic
+   16) Import ALL — Merge
 ========================= */
 
 function findGroupByName(name) {
@@ -1486,7 +1645,7 @@ function mergeAppState(incomingState) {
 }
 
 /* =========================
-   16) PDF Export (ALL groups)
+   17) PDF Export
 ========================= */
 
 function exportPdfAllGroups() {
@@ -1586,9 +1745,9 @@ function exportPdfAllGroups() {
     hr();
 
     st.periods.forEach((p, pi) => {
-    const from = formatDateLocal(p.from) || "—";
-    const to = formatDateLocal(p.to) || "—";
-    const t = calcPeriodTotals(p, st.defaultRatePercent);
+      const from = formatDateLocal(p.from) || "—";
+      const to = formatDateLocal(p.to) || "—";
+      const t = calcPeriodTotals(p, st.defaultRatePercent);
 
       textLine(`Period ${pi + 1}: ${from} → ${to}`, 11, true);
       textLine(
@@ -1598,19 +1757,20 @@ function exportPdfAllGroups() {
       );
 
       p.rows.forEach((r) => {
-  const name = (r.customer || "Client").toString().trim() || "Client";
-  const city = (r.city || "—").toString().trim() || "—";
-  const rg = money(parseMoney(r.gross));
-  const rn = money(parseMoney(r.net));
+        const name = (r.customer || "Client").toString().trim() || "Client";
+        const city = (r.city || "—").toString().trim() || "—";
+        const rg = money(parseMoney(r.gross));
+        const rn = money(parseMoney(r.net));
 
-  const state = ["none", "done", "fail"].includes(r.done) ? r.done : "none";
-  const statusText =
-    state === "done" ? " | Status: Done"
-    : state === "fail" ? " | Status: Fail"
-    : "";
+        const state = ["none", "done", "fail", "fixed"].includes(r.done) ? r.done : "none";
+        const statusText =
+          state === "done" ? " | Status: Done"
+          : state === "fail" ? " | Status: Fail"
+          : state === "fixed" ? " | Status: Fixed"
+          : "";
 
-  textLine(`• ${name} [${city}] | Gross: ${rg} | Net: ${rn}${statusText}`, 10, false);
-});
+        textLine(`• ${name} [${city}] | Gross: ${rg} | Net: ${rn}${statusText}`, 10, false);
+      });
 
       hr();
     });
@@ -1621,13 +1781,17 @@ function exportPdfAllGroups() {
   const fileName = `client-totals_ALL_${nowStamp()}.pdf`;
 
   setTimeout(() => {
-    try { doc.save(fileName); }
-    catch (e) { console.error(e); alert("PDF export failed (download issue). Try Chrome."); }
+    try {
+      doc.save(fileName);
+    } catch (e) {
+      console.error(e);
+      alert("PDF export failed (download issue). Try Chrome.");
+    }
   }, 150);
 }
 
 /* =========================
-   17) Scroll-to-top + Keyboard
+   18) Scroll + Keyboard
 ========================= */
 
 function toggleToTop() {
@@ -1642,13 +1806,13 @@ function toggleToTop() {
   window.addEventListener("resize", () => {
     const h = window.innerHeight;
     const opened = h < baseH - 120;
-    document.body.classList.toggle("keyboard-open", opened);
+    rootEl.classList.toggle("keyboard-open", opened);
     if (!opened) baseH = h;
   });
 })();
 
 /* =========================
-   18) Floating Add Client
+   19) Floating Add Client
 ========================= */
 
 function addClientToLastPeriod() {
@@ -1669,7 +1833,7 @@ function addClientToLastPeriod() {
 }
 
 /* =========================
-   19) Events
+   20) Events
 ========================= */
 
 modeEditBtn?.addEventListener("click", () => setMode("edit"));
@@ -1739,7 +1903,6 @@ defaultRateInput?.addEventListener("input", () => {
 
 addPeriodBtn?.addEventListener("click", () => {
   const g = activeGroup();
-
   g.data.periods.push({ id: uuid(), from: "", to: "", rows: [emptyRow()] });
 
   saveState();
@@ -1884,8 +2047,9 @@ pdfAllBtn?.addEventListener("click", () => {
   pdfAllBtn.textContent = "Generating PDF...";
 
   setTimeout(() => {
-    try { exportPdfAllGroups(); }
-    finally {
+    try {
+      exportPdfAllGroups();
+    } finally {
       setTimeout(() => {
         pdfAllBtn.disabled = false;
         pdfAllBtn.textContent = oldText;
@@ -1906,25 +2070,74 @@ fabAddClient?.addEventListener("click", () => {
   addClientToLastPeriod();
 });
 
+statusListClose?.addEventListener("click", closeStatusListModal);
+
+statusListModal?.addEventListener("click", (e) => {
+  if (e.target === statusListModal) {
+    closeStatusListModal();
+  }
+});
+
+function initStatusBadgeActions() {
+  const doneEl = document.getElementById("monthDone");
+  const failEl = document.getElementById("monthFail");
+  const fixedEl = document.getElementById("monthFixed");
+
+  [doneEl, failEl, fixedEl].forEach((el) => {
+    if (!el) return;
+
+    el.style.cursor = "pointer";
+
+    el.onclick = () => {
+      const status = el.dataset.status;
+      if (!status) return;
+
+      const clients = getClientsByStatus(status);
+      openStatusListModal(status, clients);
+    };
+  });
+}
+
 /* =========================
-   20) Init
+   21) Init
 ========================= */
 
 initTheme();
 initControlsToggle();
 initSummaryPanel();
 render();
+initStatusBadgeActions();
 setMode(appState.uiMode);
 
+requestAnimationFrame(() => {
+  document.body.classList.remove("booting");
+});
+
+window.addEventListener("load", () => {
+  const splash = document.getElementById("splash");
+
+  setTimeout(() => {
+    splash?.classList.add("splash-hide");
+
+    document.documentElement.classList.remove("app-preload");
+    document.documentElement.classList.add("app-ready");
+    document.documentElement.classList.add("ready");
+
+    setTimeout(() => {
+      splash?.remove();
+    }, 300);
+  }, 120);
+});
+
 /* =========================
-   21) Service Worker (update box)
+   22) Service Worker
 ========================= */
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js").then((reg) => {
     reg.addEventListener("updatefound", () => {
       const newWorker = reg.installing;
-      newWorker.addEventListener("statechange", () => {
+      newWorker?.addEventListener("statechange", () => {
         if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
           const box = document.getElementById("updateBox");
           const btn = document.getElementById("updateBtn");
