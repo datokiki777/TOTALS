@@ -1949,6 +1949,10 @@ html.app-ready .to-top{
   line-height:1.4;
 }
 
+html[data-theme="light"] .status-list-empty{
+  color:#1e293b;
+}
+
 html[data-theme="light"] .status-list-item{
   background: rgba(255,255,255,.68);
   border-color: rgba(15,23,42,.14);
@@ -2245,4 +2249,20 @@ html[data-theme="dark"] .global-search-card .review-search-meta b{
 html[data-theme="dark"] .search-highlight{
   background: rgba(255,210,80,0.22);
   color: #ffe08a;
+}
+
+#textPromptInput{
+  width:100%;
+}
+
+html[data-theme="light"] #textPromptInput{
+  background:rgba(255,255,255,.72);
+  border:1px solid rgba(15,23,42,.18);
+  color:#0f172a;
+}
+
+html[data-theme="dark"] #textPromptInput{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  color:var(--text);
 }
