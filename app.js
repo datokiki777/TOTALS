@@ -2458,12 +2458,3 @@ window.addEventListener("appinstalled", () => {
 });
 
 
-
-window.addEventListener("load", () => {
-  const bar = document.getElementById("updateBar");
-  if (bar) {
-    setTimeout(() => {
-      bar.style.display = "flex";
-    }, 700);
-  }
-});
