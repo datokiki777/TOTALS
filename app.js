@@ -91,6 +91,14 @@ const themeDarkBtn = document.getElementById("themeDarkBtn");
 const themeLightBtn = document.getElementById("themeLightBtn");
 const themeSwitch = document.getElementById("themeSwitch");
 
+// Text prompt modal
+const textPromptModal = document.getElementById("textPromptModal");
+const textPromptTitle = document.getElementById("textPromptTitle");
+const textPromptText = document.getElementById("textPromptText");
+const textPromptInput = document.getElementById("textPromptInput");
+const textPromptCancel = document.getElementById("textPromptCancel");
+const textPromptOk = document.getElementById("textPromptOk");
+
 /* =========================
    3) App State
 ========================= */
@@ -392,7 +400,7 @@ function openStatusListModal(status, clients) {
 `;
 
   if (!clients.length) {
-    statusListBody.innerHTML = `<div class="status-list-empty">ამ სტატუსით კლიენტი ვერ მოიძებნა.</div>`;
+    statusListBody.innerHTML = `<div class="status-list-empty">No clients found with this status.</div>`;
     statusListModal.style.display = "flex";
     return;
   }
@@ -570,6 +578,65 @@ function askConfirm(message, title = "Confirm") {
         resolve(false);
       }
     };
+  });
+}
+
+function askText(title, message, defaultValue = "", okLabel = "Save") {
+  return new Promise((resolve) => {
+    if (
+      !textPromptModal ||
+      !textPromptTitle ||
+      !textPromptText ||
+      !textPromptInput ||
+      !textPromptCancel ||
+      !textPromptOk
+    ) {
+      resolve(window.prompt(message, defaultValue) || "");
+      return;
+    }
+
+    textPromptTitle.textContent = title;
+    textPromptText.textContent = message;
+    textPromptInput.value = defaultValue || "";
+    textPromptOk.textContent = okLabel;
+
+    textPromptModal.style.display = "flex";
+
+    const cleanup = () => {
+      textPromptModal.style.display = "none";
+      textPromptCancel.onclick = null;
+      textPromptOk.onclick = null;
+      textPromptModal.onclick = null;
+      document.onkeydown = null;
+    };
+
+    const submit = () => {
+      const value = textPromptInput.value.trim();
+      cleanup();
+      resolve(value);
+    };
+
+    const cancel = () => {
+      cleanup();
+      resolve("");
+    };
+
+    textPromptCancel.onclick = cancel;
+    textPromptOk.onclick = submit;
+
+    textPromptModal.onclick = (e) => {
+      if (e.target === textPromptModal) cancel();
+    };
+
+    document.onkeydown = (e) => {
+      if (e.key === "Escape") cancel();
+      if (e.key === "Enter") submit();
+    };
+
+    setTimeout(() => {
+      textPromptInput.focus();
+      textPromptInput.select();
+    }, 30);
   });
 }
 
@@ -1940,8 +2007,14 @@ groupSelect?.addEventListener("change", () => {
   if (appState.uiMode === "review") renderReview();
 });
 
-addGroupBtn?.addEventListener("click", () => {
-  const name = prompt("Group name?", `Group ${appState.groups.length + 1}`);
+addGroupBtn?.addEventListener("click", async () => {
+  const name = await askText(
+    "New Group",
+    "Enter group name:",
+    `Group ${appState.groups.length + 1}`,
+    "Add"
+  );
+
   if (!name) return;
 
   const g = {
@@ -1955,17 +2028,25 @@ addGroupBtn?.addEventListener("click", () => {
   saveState();
 
   render();
-  setMode("review");
+  setMode("edit");
 });
 
-renameGroupBtn?.addEventListener("click", () => {
+renameGroupBtn?.addEventListener("click", async () => {
   const g = activeGroup();
-  const name = prompt("New group name:", g.name);
+
+  const name = await askText(
+    "Rename Group",
+    "Enter new group name:",
+    g.name,
+    "Rename"
+  );
+
   if (!name) return;
 
   g.name = name.toString().trim() || g.name;
   saveState();
   renderGroupSelect();
+  render();
   if (appState.uiMode === "review") renderReview();
 });
 
