@@ -44,11 +44,11 @@ self.addEventListener("fetch", (event) => {
 
   // HTML / navigation -> network first
   if (
-    req.mode === "navigate" ||
-    url.pathname.endsWith(".html") ||
-    url.pathname === "/TOTALS/" ||
-    url.pathname === "/TOTALS"
-  ) {
+  req.mode === "navigate" ||
+  url.pathname.endsWith(".html") ||
+  url.pathname === "/" ||
+  url.pathname === ""
+) {
     event.respondWith(
       fetch(req)
         .then((res) => {
@@ -105,4 +105,5 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.action === "skipWaiting") {
     self.skipWaiting();
   }
+
 });
