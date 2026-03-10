@@ -315,14 +315,32 @@
   </div>
 </div>
 
+   <!-- Text Prompt Modal -->
+<div id="textPromptModal" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <div id="textPromptTitle" class="modal-title">Enter text</div>
+    <div id="textPromptText" class="modal-text">Type a value below.</div>
+
+    <div style="margin-top:12px;">
+      <input
+        id="textPromptInput"
+        type="text"
+        class="review-search-input"
+        style="width:100%;"
+        placeholder="Type here"
+      />
+    </div>
+
+    <div class="modal-actions">
+      <button id="textPromptCancel" class="btn">Cancel</button>
+      <button id="textPromptOk" class="btn primary">Save</button>
+    </div>
+  </div>
+</div>
 
   <!-- scripts -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="app.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js");
-    }
-  </script>
+      
 </body>
 </html>
