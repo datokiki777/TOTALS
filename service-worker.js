@@ -1,4 +1,4 @@
-const CACHE = "client-totals-v29";
+const CACHE = "client-totals-v30";
 
 const ASSETS = [
   "./",
@@ -38,6 +38,7 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
 });
+
 
 
 
