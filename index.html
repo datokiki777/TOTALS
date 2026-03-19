@@ -67,6 +67,7 @@
             <select id="groupSelect" class="select"></select>
             <button id="addGroupBtn" class="btn small primary">+ Group</button>
             <button id="renameGroupBtn" class="btn small">Rename</button>
+            <button id="archiveGroupBtn" class="btn small" title="Archive / Unarchive group">📦</button>
             <button id="deleteGroupBtn" class="btn small danger">Del</button>
           </div>
         </label>
@@ -116,6 +117,7 @@
     <div class="toggle">
       <button id="totalsActiveBtn" class="toggle-btn active">Active</button>
       <button id="totalsAllBtn" class="toggle-btn">All</button>
+      <button id="totalsArchivedBtn" class="toggle-btn" style="display:none;">Archived</button>
     </div>
   </div>
 
@@ -176,6 +178,12 @@
   </div>
 </div>
 </section>
+
+    <!-- Review group toggle: Active / Archived — visible only in review mode -->
+    <div id="reviewGroupToggle" class="review-group-toggle" style="display:none;">
+      <button id="reviewActiveBtn" class="toggle-btn active">Active</button>
+      <button id="reviewArchivedBtn" class="toggle-btn">Archived</button>
+    </div>
 
     <!-- EDIT VIEW -->
     <div id="editView">

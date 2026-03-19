@@ -57,6 +57,12 @@ const deleteGroupBtn = document.getElementById("deleteGroupBtn");
 // Grand Total toggle
 const totalsActiveBtn = document.getElementById("totalsActiveBtn");
 const totalsAllBtn = document.getElementById("totalsAllBtn");
+const totalsArchivedBtn = document.getElementById("totalsArchivedBtn");
+
+// Review group toggle
+const reviewGroupToggle = document.getElementById("reviewGroupToggle");
+const reviewActiveBtn = document.getElementById("reviewActiveBtn");
+const reviewArchivedBtn = document.getElementById("reviewArchivedBtn");
 
 // Export/Import ALL groups
 const pdfAllBtn = document.getElementById("pdfAllBtn");
@@ -86,10 +92,10 @@ const statusListBody = document.getElementById("statusListBody");
 const statusListClose = document.getElementById("statusListClose");
 
 // Theme controls
-const themeToggle = document.getElementById("themeToggle");
-const themeDarkBtn = document.getElementById("themeDarkBtn");
-const themeLightBtn = document.getElementById("themeLightBtn");
 const themeSwitch = document.getElementById("themeSwitch");
+
+// Archive controls
+let showArchived = false;
 
 // Text prompt modal
 const textPromptModal = document.getElementById("textPromptModal");
@@ -293,7 +299,7 @@ function getMonthEnd(monthKey) {
 }
 
 function getAllMonthKeysForMode(mode = appState.grandMode) {
-  const groups = mode === "all" ? appState.groups : [activeGroup()];
+  const groups = getGroupsByMode(mode);
   const keys = new Set();
 
   groups.forEach((gr) => {
@@ -345,11 +351,9 @@ function formatPeriodPreview(from, to) {
   return `${left} → ${right}`;
 }
 
-  function getClientsByStatus(status) {
+function getClientsByStatus(status) {
   const list = [];
-  const groups = appState.grandMode === "all"
-    ? appState.groups
-    : [activeGroup()];
+  const groups = getGroupsByMode();
 
   groups.forEach((group) => {
     (group.data?.periods || []).forEach((period) => {
@@ -358,6 +362,7 @@ function formatPeriodPreview(from, to) {
           list.push({
             groupId: group.id,
             groupName: group.name,
+            groupArchived: group.archived === true,
             periodId: period.id,
             periodFrom: period.from,
             periodTo: period.to,
@@ -459,11 +464,11 @@ function bindStatusListItemClicks(clients) {
 
   statusListBody.innerHTML = clients.map((item) => `
     <div class="status-list-item">
-      <div class="status-list-name">${escapeHtml(item.customer)}</div>
+      <div class="status-list-name">${item.groupArchived ? '📦 ' : ''}${escapeHtml(item.customer)}</div>
       <div class="status-list-meta">
         <span><b>City:</b> ${escapeHtml(item.city || "—")}</span>
         <span><b>Period:</b> ${escapeHtml(formatDateLocal(item.periodFrom))} → ${escapeHtml(formatDateLocal(item.periodTo))}</span>
-        <span><b>Group:</b> ${escapeHtml(item.groupName)}</span>
+        <span><b>Group:</b> ${item.groupArchived ? '📦 ' : ''}${escapeHtml(item.groupName)}</span>
       </div>
     </div>
   `).join("");
@@ -496,9 +501,6 @@ function setTheme(theme) {
   if (themeSwitch && "checked" in themeSwitch) {
     themeSwitch.checked = t === "light";
   }
-
-  themeDarkBtn?.classList.toggle("active", t === "dark");
-  themeLightBtn?.classList.toggle("active", t === "light");
 }
 
 function toggleTheme() {
@@ -509,19 +511,6 @@ function toggleTheme() {
 function initTheme() {
   const t = getSavedTheme() || "dark";
   setTheme(t);
-
-  themeToggle?.addEventListener("click", toggleTheme);
-  themeDarkBtn?.addEventListener("click", () => {
-    setTheme("dark");
-    render();
-    if (appState.uiMode === "review") renderReview();
-  });
-
-  themeLightBtn?.addEventListener("click", () => {
-    setTheme("light");
-    render();
-    if (appState.uiMode === "review") renderReview();
-  });
 
   themeSwitch?.addEventListener("change", () => {
     setTheme(themeSwitch.checked ? "light" : "dark");
@@ -660,7 +649,7 @@ function defaultGroupData() {
 }
 
 function defaultAppState() {
-  const g1 = { id: uuid(), name: "Group 1", data: defaultGroupData() };
+  const g1 = { id: uuid(), name: "Group 1", archived: false, data: defaultGroupData() };
   return {
     activeGroupId: g1.id,
     groups: [g1],
@@ -705,13 +694,14 @@ function normalizeAppState(s) {
   const out = {
     activeGroupId: s?.activeGroupId || "",
     groups: [],
-    grandMode: s?.grandMode === "all" ? "all" : "active",
+    grandMode: s?.grandMode === "all" ? "all" : s?.grandMode === "archived" ? "archived" : "active",
     uiMode: s?.uiMode === "edit" ? "edit" : "review",
   };
 
   out.groups = (groups.length ? groups : defaultAppState().groups).map((g) => ({
     id: g?.id || uuid(),
     name: (g?.name ?? "Group").toString().trim() || "Group",
+    archived: g?.archived === true,
     data: normalizeGroupData(g?.data),
   }));
 
@@ -739,7 +729,21 @@ function loadState() {
 }
 
 function activeGroup() {
-  return appState.groups.find((g) => g.id === appState.activeGroupId) || appState.groups[0];
+  const current = appState.groups.find((g) => g.id === appState.activeGroupId);
+  if (current) return current;
+
+  const firstActive = appState.groups.find(g => !g.archived);
+  return firstActive || appState.groups[0];
+}
+
+function getGroupsByMode(mode = appState.grandMode) {
+  if (mode === "active") {
+    return [activeGroup()];
+  } else if (mode === "archived") {
+    return appState.groups.filter(g => g.archived);
+  } else { // "all"
+    return appState.groups.filter(g => !g.archived);
+  }
 }
 
 function getSavedCollapsedPeriods() {
@@ -809,21 +813,73 @@ function renderGroupSelect() {
   if (!groupSelect) return;
 
   groupSelect.innerHTML = "";
-  appState.groups.forEach((g) => {
+
+  const activeGroups = appState.groups.filter(g => !g.archived);
+  const archivedGroups = appState.groups.filter(g => g.archived);
+
+  const groupColors = [
+    'rgba(93, 212, 255, 0.15)',
+    'rgba(52, 211, 153, 0.15)',
+    'rgba(251, 191, 36, 0.15)',
+    'rgba(248, 113, 113, 0.15)',
+    'rgba(192, 132, 252, 0.15)',
+    'rgba(45, 212, 191, 0.15)',
+    'rgba(251, 146, 60, 0.15)',
+    'rgba(232, 121, 249, 0.15)',
+  ];
+
+  activeGroups.forEach((g) => {
     const opt = document.createElement("option");
     opt.value = g.id;
     opt.textContent = g.name;
+    const globalIdx = appState.groups.findIndex(gr => gr.id === g.id);
+    opt.style.backgroundColor = groupColors[globalIdx % groupColors.length];
     groupSelect.appendChild(opt);
   });
 
-  groupSelect.value = appState.activeGroupId;
+  if (archivedGroups.length > 0) {
+    const separator = document.createElement("option");
+    separator.disabled = true;
+    separator.textContent = "──────────";
+    groupSelect.appendChild(separator);
+
+    archivedGroups.forEach((g) => {
+      const opt = document.createElement("option");
+      opt.value = g.id;
+      opt.textContent = "📦 " + g.name;
+      opt.style.opacity = "0.6";
+      groupSelect.appendChild(opt);
+    });
+  }
+
+  if (appState.activeGroupId) {
+    groupSelect.value = appState.activeGroupId;
+  }
 }
 
 function updateGrandToggleUI() {
-  if (!totalsActiveBtn || !totalsAllBtn) return;
-  const isAll = appState.grandMode === "all";
-  totalsActiveBtn.classList.toggle("active", !isAll);
-  totalsAllBtn.classList.toggle("active", isAll);
+  if (!totalsActiveBtn || !totalsAllBtn || !totalsArchivedBtn) return;
+
+  const currentGroup = activeGroup();
+  const isEditWithArchived = appState.uiMode === "edit" && currentGroup?.archived;
+
+  // Edit-ში archived ჯგუფი: All ღილაკი იმალება, grandMode forced "active"
+  if (totalsAllBtn) totalsAllBtn.style.display = isEditWithArchived ? "none" : "";
+
+  // თუ edit-ში archived ჯგუფია, grandMode-ს active-ზე ვაყენებთ
+  if (isEditWithArchived && appState.grandMode !== "active") {
+    appState.grandMode = "active";
+    saveState();
+  }
+
+  totalsActiveBtn.classList.toggle("active", appState.grandMode === "active");
+  totalsAllBtn.classList.toggle("active", appState.grandMode === "all");
+  totalsArchivedBtn.classList.toggle("active", appState.grandMode === "archived");
+
+  if (reviewActiveBtn && reviewArchivedBtn) {
+    reviewActiveBtn.classList.toggle("active", appState.grandMode !== "archived");
+    reviewArchivedBtn.classList.toggle("active", appState.grandMode === "archived");
+  }
 }
 
 function updateFloatingAddClientVisibility() {
@@ -841,10 +897,20 @@ function setControlsForMode(mode) {
   const isEdit = mode === "edit";
   syncRootModeClass(mode);
 
+  const archiveGroupBtn = document.getElementById("archiveGroupBtn");
+
+  // Edit: Active + All; Review: Active + All + Archived
+  if (totalsArchivedBtn) totalsArchivedBtn.style.display = isEdit ? "none" : "";
+
+  // Review group toggle (Active/Archived) — summary კარტის ქვეშ
+  if (reviewGroupToggle) reviewGroupToggle.style.display = isEdit ? "none" : "flex";
+
   const enableAlways = [modeEditBtn, modeReviewBtn, totalsActiveBtn, totalsAllBtn, controlsToggle];
+  if (!isEdit) enableAlways.push(totalsArchivedBtn);
+
   const enableInReview = [groupSelect, exportBtn, exportAllBtn, pdfAllBtn];
   const enableInEdit = [
-    groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn,
+    groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn, archiveGroupBtn,
     defaultRateInput,
     addPeriodBtn, resetBtn,
     importInput, importAllInput,
@@ -852,7 +918,7 @@ function setControlsForMode(mode) {
   ];
 
   const all = [
-    groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn,
+    groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn, archiveGroupBtn,
     defaultRateInput,
     addPeriodBtn, exportBtn, importInput, resetBtn,
     exportAllBtn, importAllInput,
@@ -932,10 +998,11 @@ function calcGrandTotalsActiveGroup() {
   );
 }
 
-function calcGrandTotalsAllGroups() {
+function calcGrandTotalsByMode(mode = appState.grandMode) {
   const grand = { gross: 0, net: 0, my: 0 };
+  const groups = getGroupsByMode(mode);
 
-  appState.groups.forEach((gr) => {
+  groups.forEach((gr) => {
     const st = gr.data;
     st.periods.forEach((p) => {
       const t = calcPeriodTotals(p, st.defaultRatePercent);
@@ -953,7 +1020,7 @@ function calcMonthlyTotals(monthKey, mode = appState.grandMode) {
 
   const monthStart = getMonthStart(monthKey);
   const monthEnd = getMonthEnd(monthKey);
-  const groups = mode === "all" ? appState.groups : [activeGroup()];
+  const groups = getGroupsByMode(mode);
   const totals = { gross: 0, net: 0, my: 0 };
 
   groups.forEach((gr) => {
@@ -981,11 +1048,8 @@ function calcMonthlyTotals(monthKey, mode = appState.grandMode) {
 }
 
 function calcMonthlyStatus(monthKey, mode = appState.grandMode) {
-  const groups = mode === "all" ? appState.groups : [activeGroup()];
-
-  let done = 0;
-  let fail = 0;
-  let fixed = 0;
+  const groups = getGroupsByMode(mode);
+  let done = 0, fail = 0, fixed = 0;
 
   groups.forEach((gr) => {
     (gr.data?.periods || []).forEach((p) => {
@@ -1042,12 +1106,7 @@ function shiftMonthCursor(dir) {
 }
 
 function recalcAndRenderTotals() {
-  const g = activeGroup();
-  const st = g.data;
-
-  const grand = appState.grandMode === "all"
-    ? calcGrandTotalsAllGroups()
-    : calcGrandTotalsActiveGroup();
+  const grand = calcGrandTotalsByMode(appState.grandMode);
 
   if (grandGrossEl) {
     animateNumber(grandGrossEl, grand.gross);
@@ -1067,19 +1126,23 @@ function recalcAndRenderTotals() {
     setTimeout(() => grandMyEl.classList.remove("total-flash"), 280);
   }
 
-  const periodSections = elPeriods?.querySelectorAll?.(".period") ?? [];
-  periodSections.forEach((sec, i) => {
-    const p = st.periods[i];
-    if (!p) return;
+  if (appState.uiMode === "edit") {
+    const g = activeGroup();
+    const st = g.data;
+    const periodSections = elPeriods?.querySelectorAll?.(".period") ?? [];
+    periodSections.forEach((sec, i) => {
+      const p = st.periods[i];
+      if (!p) return;
 
-    const t = calcPeriodTotals(p, st.defaultRatePercent);
-    const gEl = sec.querySelector(".total-gross");
-    const nEl = sec.querySelector(".total-net");
-    const mEl = sec.querySelector(".my-eur");
-    if (gEl) gEl.textContent = fmt(t.gross);
-    if (nEl) nEl.textContent = fmt(t.net);
-    if (mEl) mEl.textContent = fmt(t.my);
-  });
+      const t = calcPeriodTotals(p, st.defaultRatePercent);
+      const gEl = sec.querySelector(".total-gross");
+      const nEl = sec.querySelector(".total-net");
+      const mEl = sec.querySelector(".my-eur");
+      if (gEl) gEl.textContent = fmt(t.gross);
+      if (nEl) nEl.textContent = fmt(t.net);
+      if (mEl) mEl.textContent = fmt(t.my);
+    });
+  }
 
   renderMonthlyStats();
 }
@@ -1196,11 +1259,11 @@ function render() {
     }
 
     if (collapseGroupPreview) {
-      collapseGroupPreview.textContent = g.name || "Group";
+      collapseGroupPreview.textContent = g.archived ? `📦 ${g.name}` : (g.name || "Group");
     }
 
     if (groupBox) {
-      groupBox.textContent = `Group: ${g.name || "Group"}`;
+      groupBox.textContent = g.archived ? `📦 Group: ${g.name}` : `Group: ${g.name || "Group"}`;
     }
 
     if (section) {
@@ -1399,6 +1462,7 @@ function buildReviewSearchIndex() {
 
   (appState.groups || []).forEach((gr) => {
     const gName = gr?.name ?? "Group";
+    const gArchived = gr?.archived === true;
     const periods = gr?.data?.periods || [];
 
     periods.forEach((p) => {
@@ -1411,19 +1475,19 @@ function buildReviewSearchIndex() {
         if (!customer && !city) return;
 
         rows.push({
-  groupId: gr.id,
-  periodId: p.id,
-  rowId: r.id,
-
-  group: gName,
-  from,
-  to,
-  customer,
-  city,
-  gross: fmt(parseMoney(r?.gross)),
-  net: fmt(parseMoney(r?.net)),
-  status: ["done", "fail", "fixed"].includes(r?.done) ? r.done : "none",
-});
+          groupId: gr.id,
+          periodId: p.id,
+          rowId: r.id,
+          group: gName,
+          groupArchived: gArchived,
+          from,
+          to,
+          customer,
+          city,
+          gross: fmt(parseMoney(r?.gross)),
+          net: fmt(parseMoney(r?.net)),
+          status: ["done", "fail", "fixed"].includes(r?.done) ? r.done : "none",
+        });
       });
     });
   });
@@ -1527,7 +1591,7 @@ function initReviewSearch() {
   resultsEl.innerHTML = limited.map(x => `
     <div class="review-search-item">
       <div class="review-search-name-row">
-        <div class="review-search-name">${highlightMatch(x.customer || "Client", q)}</div>
+        <div class="review-search-name">${x.groupArchived ? '📦 ' : ''}${highlightMatch(x.customer || "Client", q)}</div>
         ${
           x.status === "done"
             ? `<span class="search-status search-status-done">Done</span>`
@@ -1540,7 +1604,7 @@ function initReviewSearch() {
       </div>
 
       <div class="review-search-meta">
-        <span><b>Group:</b> ${escapeHtml(x.group)}</span>
+        <span><b>Group:</b> ${x.groupArchived ? '📦 ' : ''}${escapeHtml(x.group)}</span>
         <span><b>Period:</b> ${escapeHtml(x.from)} → ${escapeHtml(x.to)}</span>
         <span><b>City:</b> ${highlightMatch(x.city || "—", q)}</span>
         <span><b>Gross:</b> ${escapeHtml(x.gross)}</span>
@@ -1595,109 +1659,135 @@ function initReviewSearch() {
 function renderReview() {
   if (!reviewView) return;
 
-  const g = activeGroup();
-  const st = g.data;
+  const groupsToShow = getGroupsByMode();
 
-  const groupTotals = st.periods.reduce(
-    (acc, p) => {
-      const t = calcPeriodTotals(p, st.defaultRatePercent);
-      acc.gross += t.gross;
-      acc.net += t.net;
-      acc.my += t.my;
-      acc.periods += 1;
-      acc.clients += p.rows.length;
-      return acc;
-    },
-    { gross: 0, net: 0, my: 0, periods: 0, clients: 0 }
-  );
+  // Empty state
+  if (groupsToShow.length === 0) {
+    const emptyMessage = appState.grandMode === "archived"
+      ? "📦 No archived groups"
+      : appState.grandMode === "active"
+      ? "👤 No active group selected"
+      : "👥 No active groups";
 
-  const header = `
-    <section class="review-card">
-      <div class="review-head">
-        <div>
-          <h3 class="review-title">${escapeHtml(g.name)} — Review</h3>
-          <div class="review-sub">${groupTotals.periods} periods • ${groupTotals.clients} rows • Default ${fmt(st.defaultRatePercent)}%</div>
-        </div>
+    reviewView.innerHTML = `
+      <div class="review-card" style="text-align:center; padding:50px 20px;">
+        <div style="font-size:64px; margin-bottom:20px; opacity:0.6;">📭</div>
+        <div style="font-size:20px; font-weight:500; opacity:0.8;">${emptyMessage}</div>
+        <div style="font-size:14px; margin-top:12px; opacity:0.5;">Create a group or add periods to get started</div>
       </div>
-
-      <div class="review-kpis">
-        <div class="kpi">
-          <div class="kpi-label">Gross</div>
-          <div class="kpi-value">${fmt(groupTotals.gross)}</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Net</div>
-          <div class="kpi-value">${fmt(groupTotals.net)}</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">My €</div>
-          <div class="kpi-value">${fmt(groupTotals.my)}</div>
-        </div>
-      </div>
-    </section>
-  `;
-
-  const periodsHtml = st.periods.map((p) => {
-    const t = calcPeriodTotals(p, st.defaultRatePercent);
-    const from = formatDateLocal(p.from) || "—";
-    const to = formatDateLocal(p.to) || "—";
-
-    const clients = p.rows.map((r) => {
-      const name = r.customer?.trim() || "Client";
-      const city = r.city?.trim() || "—";
-      const state = ["none", "done", "fail", "fixed"].includes(r.done) ? r.done : "none";
-
-      let statusHtml = "";
-      if (state === "done") {
-        statusHtml = `<span class="review-status review-status-done">Done</span>`;
-      } else if (state === "fail") {
-        statusHtml = `<span class="review-status review-status-fail">Fail</span>`;
-      } else if (state === "fixed") {
-        statusHtml = `<span class="review-status review-status-fixed">Fixed</span>`;
-      }
-
-      return `
-        <div class="client-item">
-          <div>
-            <div class="client-name-row">
-              <div class="client-name">${escapeHtml(name)}</div>
-              ${statusHtml}
-            </div>
-            <div class="review-sub" style="margin:2px 0 0 0;">City: <b>${escapeHtml(city)}</b></div>
-          </div>
-          <div class="client-values">
-            <span>Gross:</span> <b>${fmt(parseMoney(r.gross))}</b>
-            <span>Net:</span> <b>${fmt(parseMoney(r.net))}</b>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    return `
-      <details class="period-card">
-        <summary>
-          <div class="period-meta">
-            <div class="period-range">${escapeHtml(from)} → ${escapeHtml(to)}</div>
-            <div class="period-mini">${p.rows.length} clients</div>
-          </div>
-
-          <div class="period-sum">
-            <span class="badge">Gross: <b>${fmt(t.gross)}</b></span>
-            <span class="badge">Net: <b>${fmt(t.net)}</b></span>
-            <span class="badge">My €: <b>${fmt(t.my)}</b></span>
-          </div>
-        </summary>
-
-        <div class="period-body">
-          <div class="client-list">
-            ${clients || `<div class="hint">No clients.</div>`}
-          </div>
-        </div>
-      </details>
     `;
-  }).join("");
+    initReviewSearch();
+    return;
+  }
 
-  reviewView.innerHTML = header + periodsHtml;
+  let fullHtml = "";
+
+  groupsToShow.forEach((g) => {
+    const st = g.data;
+    const groupIndex = appState.groups.findIndex(gr => gr.id === g.id);
+    const colorClass = `group-color-${groupIndex % 8}`;
+
+    const groupTotals = st.periods.reduce(
+      (acc, p) => {
+        const t = calcPeriodTotals(p, st.defaultRatePercent);
+        acc.gross += t.gross;
+        acc.net += t.net;
+        acc.my += t.my;
+        acc.periods += 1;
+        acc.clients += p.rows.length;
+        return acc;
+      },
+      { gross: 0, net: 0, my: 0, periods: 0, clients: 0 }
+    );
+
+    fullHtml += `
+      <section class="review-card ${colorClass}" style="${g.archived ? 'opacity:0.7;' : ''}">
+        <div class="review-head">
+          <div>
+            <h3 class="review-title">${escapeHtml(g.name)}${g.archived ? ' 📦' : ''} — Review</h3>
+            <div class="review-sub">${groupTotals.periods} periods • ${groupTotals.clients} rows • Default ${fmt(st.defaultRatePercent)}%</div>
+          </div>
+        </div>
+
+        <div class="review-kpis">
+          <div class="kpi">
+            <div class="kpi-label">Gross</div>
+            <div class="kpi-value">${fmt(groupTotals.gross)}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Net</div>
+            <div class="kpi-value">${fmt(groupTotals.net)}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">My €</div>
+            <div class="kpi-value">${fmt(groupTotals.my)}</div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    st.periods.forEach((p) => {
+      const t = calcPeriodTotals(p, st.defaultRatePercent);
+      const from = formatDateLocal(p.from) || "—";
+      const to = formatDateLocal(p.to) || "—";
+
+      const clients = p.rows.map((r) => {
+        const name = r.customer?.trim() || "Client";
+        const city = r.city?.trim() || "—";
+        const state = ["none", "done", "fail", "fixed"].includes(r.done) ? r.done : "none";
+
+        let statusHtml = "";
+        if (state === "done") {
+          statusHtml = `<span class="review-status review-status-done">Done</span>`;
+        } else if (state === "fail") {
+          statusHtml = `<span class="review-status review-status-fail">Fail</span>`;
+        } else if (state === "fixed") {
+          statusHtml = `<span class="review-status review-status-fixed">Fixed</span>`;
+        }
+
+        return `
+          <div class="client-item">
+            <div>
+              <div class="client-name-row">
+                <div class="client-name">${g.archived ? '📦 ' : ''}${escapeHtml(name)}</div>
+                ${statusHtml}
+              </div>
+              <div class="review-sub" style="margin:2px 0 0 0;">City: <b>${escapeHtml(city)}</b></div>
+            </div>
+            <div class="client-values">
+              <span>Gross:</span> <b>${fmt(parseMoney(r.gross))}</b>
+              <span>Net:</span> <b>${fmt(parseMoney(r.net))}</b>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      fullHtml += `
+        <details class="period-card ${colorClass}">
+          <summary>
+            <div class="period-meta">
+              <div class="period-range">${escapeHtml(from)} → ${escapeHtml(to)}</div>
+              <div class="period-mini">${p.rows.length} clients</div>
+            </div>
+
+            <div class="period-sum">
+              <span class="badge">Gross: <b>${fmt(t.gross)}</b></span>
+              <span class="badge">Net: <b>${fmt(t.net)}</b></span>
+              <span class="badge">My €: <b>${fmt(t.my)}</b></span>
+            </div>
+          </summary>
+
+          <div class="period-body">
+            <div class="client-list">
+              ${clients || `<div class="hint">No clients.</div>`}
+            </div>
+          </div>
+        </details>
+      `;
+    });
+  });
+
+  reviewView.innerHTML = fullHtml;
   initReviewSearch();
 }
 
@@ -1860,9 +1950,12 @@ function exportPdfAllGroups() {
   };
 
   const money = (n) => fmt(Number(n || 0));
-  const overall = { gross: 0, net: 0, my: 0, groups: appState.groups.length };
 
-  const groupsData = appState.groups.map((gr) => {
+  // PDF ყოველთვის ყველა ჯგუფს ბეჭდავს (archived-ებითურთ)
+  const groupsForPdf = appState.groups;
+  const overall = { gross: 0, net: 0, my: 0, groups: groupsForPdf.length };
+
+  const groupsData = groupsForPdf.map((gr) => {
     const st = gr.data;
 
     const groupTotals = st.periods.reduce(
@@ -2065,7 +2158,25 @@ function addClientToLastPeriod() {
 ========================= */
 
 modeEditBtn?.addEventListener("click", () => setMode("edit"));
-modeReviewBtn?.addEventListener("click", () => setMode("review"));
+modeReviewBtn?.addEventListener("click", async () => {
+  const g = activeGroup();
+  if (g?.archived) {
+    const ok = await askConfirm(
+      "The selected group is archived. Switch to an active group to use Review mode. Would you like to select a group now?",
+      "Archived Group"
+    );
+    if (ok) {
+      // Controls გახსნა თუ დახურულია
+      if (rootEl.classList.contains("controls-collapsed")) {
+        setControlsCollapsed(false);
+      }
+      // პირდაპირ groupSelect-ზე ფოკუსი
+      groupSelect?.focus();
+    }
+    return;
+  }
+  setMode("review");
+});
 
 groupSelect?.addEventListener("change", () => {
   appState.activeGroupId = groupSelect.value;
@@ -2268,6 +2379,7 @@ totalsActiveBtn?.addEventListener("click", () => {
 
   updateGrandToggleUI();
   recalcAndRenderTotals();
+  if (appState.uiMode === "review") renderReview();
 });
 
 totalsAllBtn?.addEventListener("click", () => {
@@ -2279,6 +2391,43 @@ totalsAllBtn?.addEventListener("click", () => {
 
   updateGrandToggleUI();
   recalcAndRenderTotals();
+  if (appState.uiMode === "review") renderReview();
+});
+
+totalsArchivedBtn?.addEventListener("click", () => {
+  appState.grandMode = "archived";
+  saveState();
+
+  const current = getCurrentMonthKey("archived");
+  setSavedMonthCursor(current);
+
+  updateGrandToggleUI();
+  recalcAndRenderTotals();
+  if (appState.uiMode === "review") renderReview();
+});
+
+reviewActiveBtn?.addEventListener("click", () => {
+  appState.grandMode = "active";
+  saveState();
+
+  const current = getCurrentMonthKey("active");
+  setSavedMonthCursor(current);
+
+  updateGrandToggleUI();
+  recalcAndRenderTotals();
+  renderReview();
+});
+
+reviewArchivedBtn?.addEventListener("click", () => {
+  appState.grandMode = "archived";
+  saveState();
+
+  const current = getCurrentMonthKey("archived");
+  setSavedMonthCursor(current);
+
+  updateGrandToggleUI();
+  recalcAndRenderTotals();
+  renderReview();
 });
 
 pdfAllBtn?.addEventListener("click", () => {
@@ -2341,12 +2490,53 @@ function initStatusBadgeActions() {
 }
 
 /* =========================
+   Archive Group
+========================= */
+
+function toggleArchiveGroup(groupId) {
+  const group = appState.groups.find(g => g.id === groupId);
+  if (!group) return;
+
+  group.archived = !group.archived;
+
+  // თუ მიმდინარე ჯგუფს ვხურავთ, გადავრთეთ სხვაზე
+  if (group.archived && appState.activeGroupId === groupId) {
+    const firstActive = appState.groups.find(g => !g.archived);
+    if (firstActive) {
+      appState.activeGroupId = firstActive.id;
+    }
+  }
+
+  saveState();
+  renderGroupSelect();
+  render();
+  if (appState.uiMode === "review") renderReview();
+}
+
+function addArchiveButtonToGroupSelect() {
+  // HTML-ში უკვე გვაქვს ღილაკი, მხოლოდ event-ს ვაბამთ
+  const archiveBtn = document.getElementById("archiveGroupBtn");
+  if (!archiveBtn) return;
+
+  archiveBtn.addEventListener("click", () => {
+    const g = appState.groups.find(x => x.id === appState.activeGroupId) || activeGroup();
+    if (!g) return;
+    const label = g.archived ? "Unarchive" : "Archive";
+    askConfirm(`${label} group "${g.name}"?`, `${label} Group`).then((ok) => {
+      if (!ok) return;
+      toggleArchiveGroup(g.id);
+    });
+  });
+}
+
+/* =========================
    21) Init
 ========================= */
 
 initTheme();
 initControlsToggle();
 initSummaryPanel();
+addArchiveButtonToGroupSelect();
 render();
 initStatusBadgeActions();
 setMode(appState.uiMode);
@@ -2381,9 +2571,9 @@ if ("serviceWorker" in navigator) {
       const newWorker = reg.installing;
       newWorker?.addEventListener("statechange", () => {
         if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-          const box = document.getElementById("updateBox");
+          const box = document.getElementById("updateBar");
           const btn = document.getElementById("updateBtn");
-          if (box) box.style.display = "block";
+          if (box) box.style.display = "flex";
           if (btn) btn.onclick = () => window.location.reload();
         }
       });

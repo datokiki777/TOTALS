@@ -2431,3 +2431,39 @@ html[data-theme="dark"] #updateBar #updateExportBtn{
     padding: 11px 8px !important;
   }
 }
+/* ===========================
+   Review Group Toggle
+=========================== */
+.review-group-toggle {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 4px 0;
+  padding: 0 2px;
+}
+.review-group-toggle .toggle-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+/* =========================
+   Group Colors - Soft Pastel
+========================= */
+
+.group-color-0 { border-left: 4px solid rgba(93, 212, 255, 0.5) !important; }
+.group-color-1 { border-left: 4px solid rgba(52, 211, 153, 0.5) !important; }
+.group-color-2 { border-left: 4px solid rgba(251, 191, 36, 0.5) !important; }
+.group-color-3 { border-left: 4px solid rgba(248, 113, 113, 0.5) !important; }
+.group-color-4 { border-left: 4px solid rgba(192, 132, 252, 0.5) !important; }
+.group-color-5 { border-left: 4px solid rgba(45, 212, 191, 0.5) !important; }
+.group-color-6 { border-left: 4px solid rgba(251, 146, 60, 0.5) !important; }
+.group-color-7 { border-left: 4px solid rgba(232, 121, 249, 0.5) !important; }
+
+.review-card.group-color-0 { background: linear-gradient(90deg, rgba(93, 212, 255, 0.05), transparent 30px); }
+.review-card.group-color-1 { background: linear-gradient(90deg, rgba(52, 211, 153, 0.05), transparent 30px); }
+.review-card.group-color-2 { background: linear-gradient(90deg, rgba(251, 191, 36, 0.05), transparent 30px); }
+.review-card.group-color-3 { background: linear-gradient(90deg, rgba(248, 113, 113, 0.05), transparent 30px); }
+.review-card.group-color-4 { background: linear-gradient(90deg, rgba(192, 132, 252, 0.05), transparent 30px); }
+.review-card.group-color-5 { background: linear-gradient(90deg, rgba(45, 212, 191, 0.05), transparent 30px); }
+.review-card.group-color-6 { background: linear-gradient(90deg, rgba(251, 146, 60, 0.05), transparent 30px); }
+.review-card.group-color-7 { background: linear-gradient(90deg, rgba(232, 121, 249, 0.05), transparent 30px); }
