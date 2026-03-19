@@ -2013,7 +2013,7 @@ y += lineH;
 
   groupsData.forEach(({ gr, st, groupTotals }, gi) => {
     const statusCounts = calcGroupStatusCounts(gr);
-    const archivedMark = gr.archived ? " 📦" : "";
+    const archivedMark = gr.archived ? " [ARCHIVED]" : "";
     textLine(`GROUP: ${gr.name}${archivedMark}`, 13, true);
     textLine(
       `Default %: ${money(st.defaultRatePercent)}%   Periods: ${groupTotals.periods}   Rows: ${groupTotals.rows}`,
@@ -2047,7 +2047,7 @@ y += lineH;
       const to = formatDateLocal(p.to) || "—";
       const t = calcPeriodTotals(p, st.defaultRatePercent);
 
-      textLine(`Period ${pi + 1}: ${from} → ${to}`, 11, true);
+      textLine(`Period ${pi + 1}: ${from} - ${to}`, 11, true);
       textLine(
         `Gross: ${money(t.gross)}   Net: ${money(t.net)}   My €: ${money(t.my)}   (Clients: ${p.rows.length})`,
         10,
@@ -2056,7 +2056,7 @@ y += lineH;
 
       p.rows.forEach((r) => {
         const customerName = (r.customer || "Client").toString().trim() || "Client";
-        const name = gr.archived ? `📦 ${customerName}` : customerName;
+        const name = gr.archived ? `[ARCHIVED] ${customerName}` : customerName;
         const city = (r.city || "—").toString().trim() || "—";
         const rg = money(parseMoney(r.gross));
         const rn = money(parseMoney(r.net));
