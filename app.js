@@ -977,6 +977,12 @@ function setControlsForMode(mode) {
 function setMode(mode) {
   appState.uiMode = mode === "edit" ? "edit" : "review";
   saveState();
+  if (appState.uiMode === "edit" && appState.grandMode === "archived") {
+    appState.grandMode = "active";
+    const current = getCurrentMonthKey("active");
+    setSavedMonthCursor(current);
+    saveState();
+  }
 
   modeEditBtn?.classList.toggle("active", appState.uiMode === "edit");
   modeReviewBtn?.classList.toggle("active", appState.uiMode === "review");
@@ -998,6 +1004,8 @@ function setMode(mode) {
 }
 
   setControlsForMode(appState.uiMode);
+  updateGrandToggleUI();
+  recalcAndRenderTotals();
   updateFloatingAddClientVisibility();
 }
 
