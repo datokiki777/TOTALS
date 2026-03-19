@@ -1,4 +1,4 @@
-const CACHE = "client-totals-shell-v8.0";
+const CACHE = "client-totals-shell-v8.1";
 
 const CORE_ASSETS = [
   "./",
@@ -37,9 +37,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
 
   // მხოლოდ იგივე origin-ზე ვმუშაობთ
-  if (url.origin !== location.origin) {
-    return;
-  }
+  if (url.origin !== location.origin) return;
 
   // HTML / navigation -> network first
   if (
@@ -62,29 +60,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // CSS / JS / manifest -> stale while revalidate
+  // CSS / JS / manifest -> network first
   if (
     url.pathname.endsWith(".css") ||
     url.pathname.endsWith(".js") ||
     url.pathname.endsWith(".json")
   ) {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        const networkFetch = fetch(req)
-          .then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, copy));
-            return res;
-          })
-          .catch(() => cached);
-
-        return cached || networkFetch;
-      })
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req))
     );
     return;
   }
 
-  // დანარჩენი -> cache first
+  // others -> cache first
   event.respondWith(
     caches.match(req).then((cached) => {
       return (
@@ -99,7 +93,7 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// skip waiting message
+// skip waiting only by user action
 self.addEventListener("message", (event) => {
   if (event.data && event.data.action === "skipWaiting") {
     self.skipWaiting();
