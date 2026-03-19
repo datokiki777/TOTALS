@@ -1,620 +1,368 @@
 <!DOCTYPE html>
-<html lang="ka">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0d3d7a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Invoice">
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
-    <title>Invoice</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Period Totals</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="mobile-web-app-capable" content="yes" />
+<script>
+(function () {
+  try {
+    const root = document.documentElement;
+    root.classList.add("app-preload");
+
+    const theme = localStorage.getItem("ct_theme_v1") || "dark";
+    root.setAttribute("data-theme", theme);
+
+    if (localStorage.getItem("ct_controls_collapsed") === "1") {
+      root.classList.add("controls-collapsed");
+    }
+
+    if (localStorage.getItem("ct_summary_collapsed") === "1") {
+      root.classList.add("summary-collapsed");
+    }
+  } catch (e) {}
+})();
+</script>
+
 </head>
-<body>
 
-<!-- TOP NAV -->
+<body class="booting">
 
-<nav class="top-nav">
-    <div class="top-nav-left"></div>
+     <div id="splash">
+          <div class="loader-ring"></div>
+           <div class="loader-bar">
+           <div class="loader-bar-fill"></div>
+         </div>
+       </div>
+       
+       <header class="topbar">
+     <div class="mode-toggle">
+    <div class="mode-switch">
+    <button id="modeEditBtn" class="btn small">Edit</button>
+    <button id="modeReviewBtn" class="btn small">Review</button>
+  </div>
 
-    <div class="top-nav-center">
-        <div class="backup-menu-wrap">
-            <button class="backup-toggle" id="backup-toggle" onclick="toggleBackupMenu()" title="Import / Export">
-                ↔
-            </button>
-            <div class="backup-menu" id="backup-menu">
-                <button class="backup-menu-btn" onclick="startImportBackup()">⤓ Import</button>
-                <button class="backup-menu-btn" onclick="exportFullBackup()">⤒ Export</button>
-                <button class="backup-menu-btn backup-menu-cancel" onclick="closeBackupMenu()">✕ Cancel</button>
-            </div>
-        </div>
+  <button id="controlsToggle" class="btn small">⚙ Controls</button>
 
-        <select class="nav-company-select" id="nav_company_picker" onchange="switchCompany(this.value)" title="Active company">
-            <option value="">— Company —</option>
-        </select>
-
-        <div class="lang-wrap">
-            <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()" title="Switch invoice language">
-                <span class="lang-flag">🇬🇧</span>
-                <span class="lang-code">EN</span>
-            </button>
-            <div class="lang-dropdown" id="lang-dropdown">
-                <button class="lang-option" onclick="selectLang('en')">
-                    <span class="lang-flag">🇬🇧</span> English
-                </button>
-                <button class="lang-option" onclick="selectLang('de')">
-                    <span class="lang-flag">🇩🇪</span> Deutsch
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="top-nav-right"></div>
-</nav>
-
-<!-- ტაბები ცალკე, ქვემოთ -->
-<div class="tabs-container">
-    <div class="nav-tabs">
-        <button class="nav-tab active" onclick="showPage('invoice')" id="tab-invoice">
-            📄 <span>Invoice</span>
-        </button>
-        <button class="nav-tab" onclick="showPage('history')" id="tab-history">
-            🗂️ <span>History</span>
-        </button>
-        <button class="nav-tab" onclick="showPage('clients')" id="tab-clients">
-            👥 <span>Clients</span>
-        </button>
-        <button class="nav-tab" onclick="showPage('companies')" id="tab-companies">
-            🏢 <span>Companies</span>
-        </button>
-    </div>
+  <label class="theme-switch" title="Theme">
+    <input id="themeSwitch" type="checkbox">
+    <span class="slider"></span>
+    <span class="icon moon">🌙</span>
+    <span class="icon sun">☀️</span>
+  </label>
 </div>
 
-<!-- INVOICE PAGE -->
+    <!-- Controls -->
+    <div class="controls">
+      <!-- LEFT SIDE: Groups + Default -->
+      <div class="actions-left">
+        <!-- GROUPS -->
+        <label class="field group-field">
+          <span>Group</span>
+          <div class="group-row">
+            <select id="groupSelect" class="select"></select>
+            <button id="addGroupBtn" class="btn small primary">+ Group</button>
+            <button id="renameGroupBtn" class="btn small">Rename</button>
+            <button id="archiveGroupBtn" class="btn small" title="Archive / Unarchive group">📦</button>
+            <button id="deleteGroupBtn" class="btn small danger">Del</button>
+          </div>
+        </label>
 
-<div class="page active" id="page-invoice">
+        <label class="field">
+          <span>Default %</span>
+          <input id="defaultRate" type="number" step="0.01" min="0" max="100" value="13.5" />
+        </label>
+      </div>
 
-    <div class="status-bar no-print">
-        <div class="save-indicator">
-            <div class="save-dot"></div>
-            <span>Auto-save active</span>
+      <!-- RIGHT SIDE: Actions -->
+      <div class="actions-right">
+        <!-- EDIT MODE ACTIONS (visible only in edit mode) -->
+        <div class="btn-row edit-actions">
+          <button id="addPeriodBtn" class="btn primary">+ New Period</button>
+          <button id="resetBtn" class="btn danger">Reset</button>
         </div>
-        <span id="today_status"></span>
+
+        <!-- REVIEW MODE ACTIONS (visible only in review mode) -->
+        <div class="btn-row review-actions" style="display:none;">
+          <button id="exportAllBtn" class="btn">Export All</button>
+          <label id="importAllLabel" class="btn file">
+            Import All
+            <input id="importAllInput" type="file" accept="application/json" hidden />
+          </label>
+          <button id="pdfAllBtn" class="btn">PDF (All)</button>
+        </div>
+      </div>
     </div>
-
-    <div class="inv-card">
-
-        <div class="inv-header">
-            <div class="company-block">
-                <div class="logo-svg" id="logo-wrap">
-                    <img id="company-logo" src="" alt="Logo" style="width:100%;height:100%;object-fit:contain;">
-                </div>
-
-                <div class="company-fields">
-                    <div class="company-row">
-                        <input type="text" class="inv-input company-name company-preview-input" id="my_comp_name" value="" placeholder="Company name" readonly>
-                    </div>
-
-                    <div class="company-row">
-                        <input type="text" class="inv-input company-preview-input" id="my_reg_no" value="" placeholder="Reg No / VAT No" readonly>
-                    </div>
-
-                    <div class="company-row">
-                        <input type="text" class="inv-input company-preview-input" id="my_addr" value="" placeholder="Address" readonly>
-                    </div>
-
-                    <div class="company-row">
-                        <input type="text" class="inv-input company-preview-input" id="my_phone" value="" placeholder="Phone" readonly>
-                    </div>
-
-                    <div class="company-row">
-                        <input type="text" class="inv-input company-preview-input" id="my_email" value="" placeholder="Email" readonly>
-                    </div>
-
-                    <div class="company-row">
-                        <input type="text" class="inv-input company-preview-input" id="my_website" value="" placeholder="Website" readonly>
-                    </div>
-                </div>
-            </div>
-
-            <div class="invoice-title-block">
-                <div class="invoice-word">INVOICE</div>
-            </div>
-        </div>
-
-        <div class="inv-meta">
-            <div class="meta-left">
-                <div class="meta-label">Bill To</div>
-                <div class="client-select-row no-print">
-                    <select class="client-select" id="client_picker" onchange="fillClientFromPicker()">
-                        <option value="">— Select a client —</option>
-                    </select>
-                </div>
-
-                <div class="client-history-dropdown no-print" id="client-history-container" style="display:none;">
-                    <button type="button" class="client-history-trigger" id="client-history-trigger" onclick="toggleClientHistoryDropdown()">
-                        <span>📋 Load previous description...</span>
-                        <span class="client-history-arrow">▾</span>
-                    </button>
-                    <div class="client-history-menu" id="client-history-menu"></div>
-                </div>
-
-                <textarea class="client-textarea no-print" id="client_info" rows="4" oninput="saveAllData()" placeholder="Client name, address..."></textarea>
-
-                <div class="client-print-block print-only" id="client_info_print"></div>
-            </div>
-
-            <div class="meta-right">
-                <div class="meta-label">Invoice Details</div>
-
-                <div class="meta-detail-row">
-                    <label>Invoice #</label>
-                    <input type="text" class="meta-text-input" id="inv_num" oninput="saveAllData()" value="">
-                </div>
-
-                <div class="meta-detail-row">
-                    <label>Date</label>
-                    <input type="text" class="meta-text-input" id="inv_date" oninput="saveAllData()" value="">
-                </div>
-            </div>
-        </div>
-
-        <div class="items-section">
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th>Qty</th>
-                        <th>Unit Price</th>
-                        <th>Amount</th>
-                        <th class="no-print items-delete-head"></th>
-                    </tr>
-                </thead>
-                <tbody id="items-body">
-                    <!-- rows injected by JS -->
-                </tbody>
-            </table>
-
-            <button class="add-row-btn no-print" onclick="addItemRow()">
-                ➕ Add Row
-            </button>
-        </div>
-
-        <div class="inv-summary">
-            <div class="summary-box">
-                <div class="summary-line subtotal">
-                    <span>Subtotal</span>
-                    <span>€<span id="subtotal_display">0.00</span></span>
-                </div>
-
-                <div class="summary-line" id="vat_summary_line">
-                    <div class="summary-vat-label">
-                        VAT (
-                        <input type="number" class="vat-rate-input" id="vat_rate" value="0" min="0" max="100" step="0.1" oninput="handleVatInput(this)" onblur="validateVatRate(this); calculateAll();">
-                        %)
-                        <input type="text" class="vat-note-input" id="vat_text" placeholder="note..." oninput="saveAllData();">
-                    </div>
-                    <span>€<span id="vat_amount">0.00</span></span>
-                </div>
-
-                <div class="summary-total">
-                    <span>TOTAL</span>
-                    <span>€<span id="grand_total">0.00</span></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="inv-footer-grid">
-
-            <div class="footer-card bank-card" id="bank_card">
-                <div class="footer-title">Bank Details</div>
-
-                <div class="bank-card-content">
-                    <div class="bank-row">
-                        <strong>Recipient</strong>
-                        <input type="text" class="bank-input no-print bank-preview-input" id="bank_recip" value="" readonly>
-                        <span class="bank-print-span print-only" id="bank_recip_span"></span>
-                    </div>
-
-                    <div class="bank-row">
-                        <strong>Bank</strong>
-                        <input type="text" class="bank-input no-print bank-preview-input" id="bank_name" value="" readonly>
-                        <span class="bank-print-span print-only" id="bank_name_span"></span>
-                    </div>
-
-                    <div class="bank-row">
-                        <strong>IBAN</strong>
-                        <input type="text" class="bank-input no-print bank-preview-input" id="bank_iban" value="" readonly>
-                        <span class="bank-print-span print-only" id="bank_iban_span"></span>
-                    </div>
-
-                    <div class="bank-row">
-                        <strong>BIC</strong>
-                        <input type="text" class="bank-input no-print bank-preview-input" id="bank_bic" value="" readonly>
-                        <span class="bank-print-span print-only" id="bank_bic_span"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="footer-card terms-card">
-                <div class="footer-title">Terms</div>
-                <p class="terms-text">Payment due within 7 days of invoice date.<br>Thank you for your business!</p>
-            </div>
-
-        </div>
-
-        <div class="action-bar no-print invoice-action-bar">
-    <button class="btn btn-success invoice-action-btn" onclick="saveInvoiceToHistory()">💾 Save</button>
-    <button class="btn btn-warning invoice-action-btn" onclick="newInvoice()">➕ New</button>
-</div>
-
-    </div>
-</div>
-
-<!-- HISTORY PAGE -->
-
-<div class="page" id="page-history">
-    <div class="page-header">
-        <div>
-            <div class="page-title">📂 Invoice History</div>
-            <div class="page-subtitle">Saved invoices</div>
-        </div>
-        <button class="btn btn-primary" onclick="newInvoice()">➕ New Invoice</button>
-    </div>
-
-    <div class="history-list" id="history-list">
-        <div class="empty-state">
-            <div class="empty-icon">🗂️</div>
-            <p>No invoices saved yet</p>
-        </div>
-    </div>
-</div>
-
-<!-- CLIENTS PAGE -->
-
-<div class="page" id="page-clients">
-    <div class="page-header">
-        <div>
-            <div class="page-title">👥 Client Database</div>
-            <div class="page-subtitle">Manage your clients</div>
-        </div>
-    </div>
-
-    <div class="clients-grid" id="clients-grid">
-        <div class="empty-state" style="grid-column:span 2;">
-            <div class="empty-icon">👤</div>
-            <p>No clients yet</p>
-        </div>
-    </div>
-
-    <div class="client-add-form client-form-card" id="client-form-card">
-        <div class="client-form-head" onclick="toggleClientForm()">
-            <div class="form-title">➕ <span id="client-form-title">New Client</span></div>
-            <button type="button" class="client-form-toggle" id="client-form-toggle">▾</button>
-        </div>
-
-        <div id="client-form-body">
-            <input type="hidden" id="edit_client_id" value="">
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Name / Company *</label>
-                    <input type="text" class="form-input" id="new_client_name" placeholder="Company or person's name">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">ID / Reg No</label>
-                    <input type="text" class="form-input" id="new_client_reg" placeholder="Reg No / VAT No">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group full">
-                    <label class="form-label">Address</label>
-                    <input type="text" class="form-input" id="new_client_addr" placeholder="Full address">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="text" class="form-input" id="new_client_email" placeholder="email@example.com">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Phone</label>
-                    <input type="text" class="form-input" id="new_client_phone" placeholder="+49 ...">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group full">
-                    <label class="form-label">Notes</label>
-                    <textarea class="form-input" id="new_client_note" rows="2" placeholder="Additional info..."></textarea>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-success" onclick="saveClient()">💾 Save</button>
-                <button class="btn btn-danger" onclick="cancelClientEdit()" id="cancel-edit-btn" style="display:none;">✕ Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- COMPANIES PAGE -->
-
-<div class="page" id="page-companies">
-    <div class="page-header">
-        <div>
-            <div class="page-title">🏢 Companies</div>
-            <div class="page-subtitle">Manage your companies</div>
-        </div>
-    </div>
-
-    <div class="clients-grid" id="companies-grid">
-        <div class="empty-state" style="grid-column:span 2;">
-            <div class="empty-icon">🏢</div>
-            <p>No companies yet</p>
-        </div>
-    </div>
-
-    <div class="client-add-form company-form-card" id="company-form-card">
-        <div class="company-form-head" onclick="toggleCompanyForm()">
-            <div class="form-title">🏢 <span id="company-form-title">New Company</span></div>
-            <button type="button" class="company-form-toggle" id="company-form-toggle">▾</button>
-        </div>
-
-        <div id="company-form-body">
-            <input type="hidden" id="edit_company_id" value="">
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Company Name *</label>
-                    <input type="text" class="form-input" id="new_company_name" placeholder="Company name">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Reg No / VAT No</label>
-                    <input type="text" class="form-input" id="new_company_reg" placeholder="Reg No / VAT No">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group full">
-                    <label class="form-label">Address</label>
-                    <input type="text" class="form-input" id="new_company_addr" placeholder="Full address">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Phone</label>
-                    <input type="text" class="form-input" id="new_company_phone" placeholder="+49 ...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="text" class="form-input" id="new_company_email" placeholder="email@example.com">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group full">
-                    <label class="form-label">Website</label>
-                    <input type="text" class="form-input" id="new_company_website" placeholder="https://example.com">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group full">
-                    <label class="form-label">Logo</label>
-                    <input type="hidden" id="new_company_logo" value="shared1">
-                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;">
-
-                        <div id="logo-thumb-shared1" onclick="selectLogoThumbnail('shared1')"
-                            style="width:52px;height:52px;border-radius:10px;overflow:hidden;cursor:pointer;border:2.5px solid #4c6ef5;box-sizing:border-box;padding:3px;background:#eef2ff;flex-shrink:0;">
-                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
-                                <rect x="5" y="5" width="90" height="90" rx="18" fill="#ffffff"/>
-                                <rect x="10" y="10" width="80" height="80" rx="16" fill="#0d3d7a"/>
-                                <path d="M22 70 L40 35 L50 50 L60 30 L78 70 Z" fill="white"/>
-                                <circle cx="70" cy="32" r="7" fill="#ffc107"/>
-                            </svg>
-                        </div>
-
-                        <div id="logo-thumb-shared2" onclick="selectLogoThumbnail('shared2')"
-                            style="width:52px;height:52px;border-radius:10px;overflow:hidden;cursor:pointer;border:2.5px solid transparent;box-sizing:border-box;padding:3px;background:#f0f4ff;flex-shrink:0;">
-                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
-                                <rect x="2" y="2" width="96" height="96" rx="18" fill="rgba(255,255,255,0.15)"/>
-                                <rect x="6" y="6" width="88" height="88" rx="15" fill="#0d3d7a"/>
-                                <rect x="22" y="30" width="56" height="9" rx="4.5" fill="white"/>
-                                <rect x="22" y="46" width="44" height="9" rx="4.5" fill="rgba(255,255,255,0.65)"/>
-                                <rect x="22" y="62" width="50" height="9" rx="4.5" fill="white"/>
-                            </svg>
-                        </div>
-
-                        <div id="logo-thumb-shared3" onclick="selectLogoThumbnail('shared3')"
-                            style="width:52px;height:52px;border-radius:10px;overflow:hidden;cursor:pointer;border:2.5px solid transparent;box-sizing:border-box;padding:3px;background:#f0f4ff;flex-shrink:0;">
-                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">
-                                <rect x="2" y="2" width="96" height="96" rx="18" fill="rgba(255,255,255,0.15)"/>
-                                <rect x="6" y="6" width="88" height="88" rx="15" fill="#0d3d7a"/>
-                                <path d="M25 35 L50 20 L75 35 L50 50 Z" fill="white"/>
-                                <path d="M25 50 L50 65 L75 50 L50 35 Z" fill="rgba(255,255,255,0.7)"/>
-                                <path d="M25 65 L50 80 L75 65 L50 50 Z" fill="white"/>
-                                <circle cx="50" cy="50" r="6" fill="#0d3d7a"/>
-                            </svg>
-                        </div>
-
-                        <div id="logo-thumb-none" onclick="selectLogoThumbnail('none')"
-                            style="width:52px;height:52px;border-radius:10px;cursor:pointer;border:2.5px solid transparent;box-sizing:border-box;background:#f0f4ff;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#a0aec0;text-align:center;line-height:1.3;">
-                            No<br>Logo
-                        </div>
-
-                    </div>
-                    <div style="display:none;" id="unlock-logo-wrap"></div>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Bank Recipient</label>
-                    <input type="text" class="form-input" id="new_company_bank_recip" placeholder="Recipient name">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Bank Name</label>
-                    <input type="text" class="form-input" id="new_company_bank_name" placeholder="Bank name">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">IBAN</label>
-                    <input type="text" class="form-input" id="new_company_bank_iban" placeholder="IBAN">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">BIC</label>
-                    <input type="text" class="form-input" id="new_company_bank_bic" placeholder="BIC">
-                </div>
-            </div>
-
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-success" onclick="saveCompany()">💾 Save</button>
-                <button class="btn btn-danger" onclick="cancelCompanyEdit()" id="cancel-company-edit-btn" style="display:none;">✕ Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Toast -->
-
-<div class="toast" id="toast"></div>
-
-<!-- Confirm Modal -->
-
-<div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
-        <h3 id="modal-title">Confirm</h3>
-        <p id="modal-msg">Are you sure?</p>
-        <div class="modal-actions">
-            <button class="btn" style="background:#eee;color:#333;" onclick="closeModal()">Cancel</button>
-            <button class="btn btn-danger" id="modal-confirm-btn">Confirm</button>
-        </div>
-    </div>
-</div>
-
-<!-- iOS Install Banner -->
-
-<div class="ios-banner" id="ios-banner" hidden>
-    <button class="ios-banner-close" onclick="dismissIOSBanner()">✕</button>
-    <div class="ios-banner-top">
-        <div class="ios-app-icon">
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <rect x="6" y="6" width="88" height="88" rx="15" fill="#0d3d7a"/>
-                <path d="M25 35 L50 20 L75 35 L50 50 Z" fill="white"/>
-                <path d="M25 50 L50 65 L75 50 L50 35 Z" fill="rgba(255,255,255,0.7)"/>
-                <path d="M25 65 L50 80 L75 65 L50 50 Z" fill="white"/>
-                <circle cx="50" cy="50" r="6" fill="#0d3d7a"/>
-            </svg>
-        </div>
-        <div class="ios-banner-text">
-            <h4>Invoice</h4>
-            <p>Install on your home screen and use offline!</p>
-        </div>
-    </div>
-
-    <div class="ios-steps">
-        <div class="ios-step">
-            <div class="ios-step-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d3d7a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
-                    <polyline points="16 6 12 2 8 6"/>
-                    <line x1="12" y1="2" x2="12" y2="15"/>
-                </svg>
-            </div>
-            <div>
-                <strong>Tap the Share button in Safari</strong>
-                <span>Bottom bar — square with arrow ⬆️</span>
-            </div>
-        </div>
-
-        <div class="ios-step">
-            <div class="ios-step-icon">➕</div>
-            <div>
-                <strong>Select "Add to Home Screen"</strong>
-                <span>Scroll down and tap it</span>
-            </div>
-        </div>
-
-        <div class="ios-step">
-            <div class="ios-step-icon">✅</div>
-            <div>
-                <strong>Tap "Add"</strong>
-                <span>The app will appear on your home screen!</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Update Banner (top strip, manual only) -->
-
-<div class="update-banner" id="update-banner">
-    <div class="update-banner-text">
-        <span>🔄 New version ready</span>
-    </div>
-    <button class="update-btn" onclick="applyUpdate()">Update</button>
-    <button class="update-dismiss" onclick="dismissUpdate()">✕</button>
-</div>
-
-<!-- Android Install Bottom Sheet -->
-
-<div class="install-sheet-overlay" id="install-sheet-overlay" onclick="dismissInstallSheet()"></div>
-<div class="install-sheet" id="install-sheet">
-    <div class="install-sheet-handle"></div>
-    <div class="install-sheet-body">
-        <div class="install-sheet-icon">
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
-                <rect x="6" y="6" width="88" height="88" rx="20" fill="#0d3d7a"/>
-                <path d="M25 35 L50 20 L75 35 L50 50 Z" fill="white"/>
-                <path d="M25 50 L50 65 L75 50 L50 35 Z" fill="rgba(255,255,255,0.7)"/>
-                <path d="M25 65 L50 80 L75 65 L50 50 Z" fill="white"/>
-                <circle cx="50" cy="50" r="6" fill="#0d3d7a"/>
-            </svg>
-        </div>
-        <div class="install-sheet-info">
-            <h3>Install Invoice</h3>
-            <p>Add to home screen for fast access and offline use</p>
-        </div>
-    </div>
-    <div class="install-sheet-actions">
-        <button class="btn" style="background:#f0f0f0;color:#333;flex:1;" onclick="dismissInstallSheet()">Not now</button>
-        <button class="btn btn-primary" style="flex:2;" onclick="triggerAndroidInstall()">📲 Install</button>
-    </div>
-</div>
-
- <input type="file" id="backup-file-input" accept=".json,application/json" style="display:none;" onchange="handleImportFile(event)">
-
-<script src="app.js"></script>
-
- <!-- Bottom Navigation for Mobile -->
-<div class="bottom-nav no-print" id="bottom-nav">
-    <button class="bottom-nav-item active" onclick="showPage('invoice')" data-page="invoice">
-        <span class="bottom-nav-icon">📄</span>
-        <span class="bottom-nav-label">Invoice</span>
+  </header>
+
+  <main class="container">
+    <section class="summary card">
+  <div class="summary-head">
+    <button id="summaryCollapseBtn" class="summary-title-btn" type="button">
+      <span>📊 Overview</span>
+      <span id="summaryCollapseIcon" class="summary-collapse-icon">▾</span>
     </button>
-    <button class="bottom-nav-item" onclick="showPage('history')" data-page="history">
-        <span class="bottom-nav-icon">🗂️</span>
-        <span class="bottom-nav-label">History</span>
-    </button>
-    <button class="bottom-nav-item" onclick="showPage('clients')" data-page="clients">
-        <span class="bottom-nav-icon">👥</span>
-        <span class="bottom-nav-label">Clients</span>
-    </button>
-    <button class="bottom-nav-item" onclick="showPage('companies')" data-page="companies">
-        <span class="bottom-nav-icon">🏢</span>
-        <span class="bottom-nav-label">Companies</span>
-    </button>
+
+    <div class="toggle">
+      <button id="totalsActiveBtn" class="toggle-btn active">Active</button>
+      <button id="totalsAllBtn" class="toggle-btn">All</button>
+      <button id="totalsArchivedBtn" class="toggle-btn" style="display:none;">Archived</button>
+    </div>
+  </div>
+
+  <div id="summaryBody" class="summary-body">
+  <div class="summary-grid">
+    <div class="kpi">
+      <div class="kpi-label">Gross</div>
+      <div class="kpi-value" id="grandGross">0.00</div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">Net</div>
+      <div class="kpi-value" id="grandNet">0.00</div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">My €</div>
+      <div class="kpi-value" id="grandMy">0.00</div>
+    </div>
+  </div>
+
+  <div class="status-summary-row premium-status-row">
+    <span>Done / Fail / Fixed</span>
+    <div class="month-badges">
+      <span class="badge-done" id="monthDone" data-status="done">0</span>
+      <span class="badge-fail" id="monthFail" data-status="fail">0</span>
+      <span class="badge-fixed" id="monthFixed" data-status="fixed">0</span>
+    </div>
+  </div>
+
+  <div class="monthly-stats">
+    <div class="monthly-head">
+      <div class="monthly-title">Monthly Statistics ~</div>
+
+      <div class="month-nav">
+        <button id="monthPrevBtn" class="btn small" type="button">‹</button>
+        <div id="monthLabel" class="month-label">March 2026</div>
+        <button id="monthNextBtn" class="btn small" type="button">›</button>
+      </div>
+    </div>
+
+    <div class="monthly-grid">
+      <div class="month-row">
+        <span>Month Gross</span>
+        <b id="monthGross">0.00</b>
+      </div>
+
+      <div class="month-row">
+        <span>Month Net</span>
+        <b id="monthNet">0.00</b>
+      </div>
+
+      <div class="month-row">
+        <span>Month My €</span>
+        <b id="monthMy">0.00</b>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+    <!-- Review group toggle: Active / Archived — visible only in review mode -->
+    <div id="reviewGroupToggle" class="review-group-toggle" style="display:none;">
+      <button id="reviewActiveBtn" class="toggle-btn active">Active</button>
+      <button id="reviewArchivedBtn" class="toggle-btn">Archived</button>
+    </div>
+
+    <!-- EDIT VIEW -->
+    <div id="editView">
+      <div id="periods"></div>
+    </div>
+
+    <!-- REVIEW VIEW -->
+    <div id="globalSearchCard" class="review-card global-search-card" hidden>
+  <div class="review-head">
+    <div class="review-search" style="width:100%;">
+      <input
+        id="reviewSearch"
+        class="review-search-input"
+        type="text"
+        placeholder="Search client (name or city)..."
+        autocomplete="off"
+      />
+      <div id="reviewSearchResults" class="review-search-results" style="display:none;"></div>
+         </div>
+      </div>
+     </div>
+    <div id="reviewView" hidden></div>
+
+    <footer class="footer">
+       <div>Saved locally on this device. Use Export/Import for backup.</div>
+    </footer>
+  </main>
+
+      <template id="periodTpl">
+  <section class="period card">
+    <div class="period-top">
+  <button class="period-collapse-btn" type="button">
+    <span class="period-collapse-title">Period</span>
+
+    <span class="period-collapse-meta">
+      <span class="period-group-preview">Group</span>
+      <span class="period-range-preview">— → —</span>
+    </span>
+
+       <span class="period-collapse-icon">▾</span>
+     </button>
+   </div>
+
+    <div class="period-body-wrap">
+      <div class="period-head">
+        <div class="period-title">
+          <h2>Period</h2>
+            <div class="period-group-box">Group</div>
+             <div class="period-dates">
+            <label class="field">
+              <span>From</span>
+              <input class="fromDate" type="date" />
+            </label>
+            <label class="field">
+              <span>To</span>
+              <input class="toDate" type="date" />
+            </label>
+          </div>
+        </div>
+
+        <div class="period-actions">
+          <button class="btn small primary addRow">+ Add client</button>
+          <button class="btn danger small removePeriod">Remove period</button>
+          <button class="btn small addPeriodInline">+ Add period</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+          <tr>
+           <th style="width: 30%">Customer</th>
+           <th style="width: 16%">Gross</th>
+           <th style="width: 16%">Net</th>
+           <th style="width: 16%">City</th>
+           <th class="done-head" style="width: 8%">Done</th>
+           <th style="width: 14%">Actions</th>
+          </tr>
+       </thead>
+
+          <tbody class="rows"></tbody>
+
+          <tfoot>
+             <tr class="total-row">
+              <td class="total-label">TOTAL</td>
+              <td class="total-gross">0.00</td>
+              <td class="total-net">0.00</td>
+            <td class="total-my">
+            <span class="pill">My €: <b class="my-eur">0.00</b></span>
+                  </td>
+                 <td></td>
+               <td></td>
+            </tr>
+        </tfoot>
+        </table>
+      </div>
+    </div>
+  </section>
+</template>
+
+  <template id="rowTpl">
+  <tr>
+    <td><input class="cust" type="text" placeholder="Client name" /></td>
+    <td><input class="gross" type="text" inputmode="decimal" placeholder="0" /></td>
+    <td><input class="net" type="text" inputmode="decimal" placeholder="0" /></td>
+    <td><input class="city" type="text" placeholder="City" /></td>
+    <td class="done-cell">
+      <button class="doneBtn state-none" type="button" aria-label="Status"></button>
+    </td>
+    <td><button class="btn small ghost removeRow">Remove</button></td>
+  </tr>
+</template>
+
+  <!-- Scroll to top button (must be inside body) -->
+  <button id="toTopBtn" class="to-top" aria-label="Back to top">↑</button>
+  <button id="fabAddClient" class="btn primary fab-add-client">+ Add client</button>
+
+ <!-- Confirm Modal -->
+<div id="confirmModal" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <div class="modal-title" id="confirmTitle">Confirm</div>
+    <div class="modal-text" id="confirmText">Are you sure?</div>
+    <div class="modal-actions">
+      <button id="confirmNo" class="btn">No</button>
+      <button id="confirmYes" class="btn danger">Yes</button>
+    </div>
+  </div>
 </div>
 
+<!-- Status List Modal -->
+<div id="statusListModal" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <div class="modal-title" id="statusListTitle">Clients</div>
+    <div id="statusListBody" class="status-list-body"></div>
+    <div class="modal-actions">
+      <button id="statusListClose" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
+   <!-- Text Prompt Modal -->
+<div id="textPromptModal" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <div id="textPromptTitle" class="modal-title">Enter text</div>
+    <div id="textPromptText" class="modal-text">Type a value below.</div>
+
+    <div style="margin-top:12px;">
+      <input
+        id="textPromptInput"
+        type="text"
+        class="review-search-input"
+        style="width:100%;"
+        placeholder="Type here"
+      />
+    </div>
+
+    <div class="modal-actions">
+      <button id="textPromptCancel" class="btn">Cancel</button>
+      <button id="textPromptOk" class="btn primary">Save</button>
+    </div>
+  </div>
+</div>
+
+  <!-- scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  
+   <!-- Install App Bar -->
+<div id="installBar" class="update-bar" style="display:none;">
+  <span>Install app</span>
+  <button id="installBtn" class="btn small primary">Install</button>
+</div>
+
+  <!-- Update Available Bar -->
+<div id="updateBar" class="update-bar" style="display:none;">
+  <div class="update-copy">
+    <div class="update-title">New version available</div>
+    <div class="update-text">Back up your data before updating.</div>
+  </div>
+
+  <div class="update-actions">
+    <button id="updateExportBtn" class="btn small">Export All</button>
+    <button id="updateBtn" class="btn small primary">Update</button>
+  </div>
+</div>
+  
+  <script src="app.js"></script>
+      
 </body>
 </html>
