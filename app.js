@@ -30,8 +30,6 @@ const tplRow = document.getElementById("rowTpl");
 
 const defaultRateInput = document.getElementById("defaultRate");
 const addPeriodBtn = document.getElementById("addPeriodBtn");
-const exportBtn = document.getElementById("exportBtn");
-const importInput = document.getElementById("importInput");
 const resetBtn = document.getElementById("resetBtn");
 
 const grandGrossEl = document.getElementById("grandGross");
@@ -68,6 +66,10 @@ const reviewArchivedBtn = document.getElementById("reviewArchivedBtn");
 const pdfAllBtn = document.getElementById("pdfAllBtn");
 const exportAllBtn = document.getElementById("exportAllBtn");
 const importAllInput = document.getElementById("importAllInput");
+
+// Action groups for edit/review modes
+const editActions = document.querySelector('.edit-actions');
+const reviewActions = document.querySelector('.review-actions');
 
 // Scroll-to-top
 const toTopBtn = document.getElementById("toTopBtn");
@@ -641,15 +643,20 @@ function emptyRow() {
   return { id: uuid(), customer: "", city: "", gross: "", net: "", done: "none" };
 }
 
-function defaultGroupData() {
+function defaultGroupData(rate = 15.0) {
   return {
-    defaultRatePercent: 13.5,
+    defaultRatePercent: clampRate(rate),
     periods: [{ id: uuid(), from: "", to: "", rows: [emptyRow()] }],
   };
 }
 
 function defaultAppState() {
-  const g1 = { id: uuid(), name: "Group 1", archived: false, data: defaultGroupData() };
+  const g1 = { 
+    id: uuid(), 
+    name: "Group 1", 
+    archived: false, 
+    data: defaultGroupData(15.0) 
+  };
   return {
     activeGroupId: g1.id,
     groups: [g1],
@@ -897,6 +904,10 @@ function setControlsForMode(mode) {
   const isEdit = mode === "edit";
   syncRootModeClass(mode);
 
+  // აჩვენე/დამალე შესაბამისი ღილაკების ჯგუფები
+  if (editActions) editActions.style.display = isEdit ? "flex" : "none";
+  if (reviewActions) reviewActions.style.display = isEdit ? "none" : "flex";
+
   const archiveGroupBtn = document.getElementById("archiveGroupBtn");
 
   // Edit: Active + All; Review: Active + All + Archived
@@ -908,20 +919,17 @@ function setControlsForMode(mode) {
   const enableAlways = [modeEditBtn, modeReviewBtn, totalsActiveBtn, totalsAllBtn, controlsToggle];
   if (!isEdit) enableAlways.push(totalsArchivedBtn);
 
-  const enableInReview = [groupSelect, exportBtn, exportAllBtn, pdfAllBtn];
+  const enableInReview = [groupSelect, pdfAllBtn];
   const enableInEdit = [
     groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn, archiveGroupBtn,
     defaultRateInput,
     addPeriodBtn, resetBtn,
-    importInput, importAllInput,
-    exportBtn, exportAllBtn,
   ];
 
   const all = [
     groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn, archiveGroupBtn,
     defaultRateInput,
-    addPeriodBtn, exportBtn, importInput, resetBtn,
-    exportAllBtn, importAllInput,
+    addPeriodBtn, resetBtn,
     pdfAllBtn,
   ];
 
@@ -935,11 +943,6 @@ function setControlsForMode(mode) {
   all.forEach((el) => setEl(el, false));
   enableAlways.forEach((el) => setEl(el, true));
   (isEdit ? enableInEdit : enableInReview).forEach((el) => setEl(el, true));
-
-  const importLabelEl = importInput?.closest("label");
-  const importAllLabelEl = importAllInput?.closest("label");
-  if (importLabelEl) importLabelEl.style.display = isEdit ? "" : "none";
-  if (importAllLabelEl) importAllLabelEl.style.display = isEdit ? "" : "none";
 
   if (pdfAllBtn) pdfAllBtn.style.display = isEdit ? "none" : "";
 }
@@ -2010,7 +2013,8 @@ y += lineH;
 
   groupsData.forEach(({ gr, st, groupTotals }, gi) => {
     const statusCounts = calcGroupStatusCounts(gr);
-    textLine(`GROUP: ${gr.name}`, 13, true);
+    const archivedMark = gr.archived ? " 📦" : "";
+    textLine(`GROUP: ${gr.name}${archivedMark}`, 13, true);
     textLine(
       `Default %: ${money(st.defaultRatePercent)}%   Periods: ${groupTotals.periods}   Rows: ${groupTotals.rows}`,
       10,
@@ -2051,7 +2055,8 @@ y += lineH;
       );
 
       p.rows.forEach((r) => {
-        const name = (r.customer || "Client").toString().trim() || "Client";
+        const customerName = (r.customer || "Client").toString().trim() || "Client";
+        const name = gr.archived ? `📦 ${customerName}` : customerName;
         const city = (r.city || "—").toString().trim() || "—";
         const rg = money(parseMoney(r.gross));
         const rn = money(parseMoney(r.net));
@@ -2195,10 +2200,22 @@ addGroupBtn?.addEventListener("click", async () => {
 
   if (!name) return;
 
+  // პროცენტის შეყვანა
+  const rateStr = await askText(
+    "Default Rate",
+    "Enter default percentage (%):",
+    "15.0",
+    "Save"
+  );
+
+  const rate = parseFloat(rateStr);
+  const validRate = !isNaN(rate) && rate >= 0 && rate <= 100 ? rate : 15.0;
+
   const g = {
     id: uuid(),
     name: name.toString().trim() || `Group ${appState.groups.length + 1}`,
-    data: defaultGroupData(),
+    archived: false,
+    data: defaultGroupData(validRate),
   };
 
   appState.groups.push(g);
@@ -2272,42 +2289,6 @@ resetBtn?.addEventListener("click", async () => {
   saveState();
   render();
   if (appState.uiMode === "review") renderReview();
-});
-
-exportBtn?.addEventListener("click", () => {
-  const g = activeGroup();
-  const payload = { type: "client-totals-group-backup", version: 1, group: g };
-  downloadJson(`client-totals-${safeFileName(g.name)}_${nowStamp()}.json`, payload);
-});
-
-importInput?.addEventListener("change", async () => {
-  const file = importInput.files?.[0];
-  if (!file) return;
-
-  try {
-    const text = await file.text();
-    const parsed = JSON.parse(text);
-
-    if (parsed?.type === "client-totals-group-backup" && parsed?.group?.data) {
-      const g = activeGroup();
-      const ok = await askConfirm(`Import will REPLACE data inside "${g.name}". Continue?`, "Import group");
-      if (!ok) return;
-
-      g.name = (parsed.group.name ?? g.name).toString().trim() || g.name;
-      g.data = normalizeGroupData(parsed.group.data);
-
-      saveState();
-      render();
-      if (appState.uiMode === "review") renderReview();
-      alert("Imported into current group.");
-    } else {
-      alert("Import failed: wrong format.");
-    }
-  } catch {
-    alert("Import failed: invalid JSON file.");
-  } finally {
-    importInput.value = "";
-  }
 });
 
 exportAllBtn?.addEventListener("click", () => {

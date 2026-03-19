@@ -2467,3 +2467,24 @@ html[data-theme="dark"] #updateBar #updateExportBtn{
 .review-card.group-color-5 { background: linear-gradient(90deg, rgba(45, 212, 191, 0.05), transparent 30px); }
 .review-card.group-color-6 { background: linear-gradient(90deg, rgba(251, 146, 60, 0.05), transparent 30px); }
 .review-card.group-color-7 { background: linear-gradient(90deg, rgba(232, 121, 249, 0.05), transparent 30px); }
+/* =========================
+   Edit/Review Actions Layout
+========================= */
+.edit-actions, .review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+@media (max-width:700px){
+  .edit-actions, .review-actions {
+    width: 100%;
+  }
+  .edit-actions .btn,
+  .review-actions .btn,
+  .review-actions .file {
+    flex: 1;
+    text-align: center;
+  }
+}

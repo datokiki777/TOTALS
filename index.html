@@ -80,27 +80,20 @@
 
       <!-- RIGHT SIDE: Actions -->
       <div class="actions-right">
-        <!-- MAIN ACTIONS -->
-        <div class="btn-row">
+        <!-- EDIT MODE ACTIONS (visible only in edit mode) -->
+        <div class="btn-row edit-actions">
           <button id="addPeriodBtn" class="btn primary">+ New Period</button>
-
-          <button id="exportBtn" class="btn">Export</button>
-          <label id="importLabel" class="btn file">
-            Import
-            <input id="importInput" type="file" accept="application/json" hidden />
-          </label>
-
           <button id="resetBtn" class="btn danger">Reset</button>
         </div>
 
-        <!-- BACKUP (ALL GROUPS) -->
-        <div class="btn-row backup-row">
+        <!-- REVIEW MODE ACTIONS (visible only in review mode) -->
+        <div class="btn-row review-actions" style="display:none;">
           <button id="exportAllBtn" class="btn">Export All</button>
-          <button id="pdfAllBtn" class="btn">PDF (All)</button>
           <label id="importAllLabel" class="btn file">
             Import All
             <input id="importAllInput" type="file" accept="application/json" hidden />
           </label>
+          <button id="pdfAllBtn" class="btn">PDF (All)</button>
         </div>
       </div>
     </div>
