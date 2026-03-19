@@ -64,11 +64,19 @@
         <label class="field group-field">
           <span>Group</span>
           <div class="group-row">
-            <select id="groupSelect" class="select"></select>
+            <button id="groupPickerBtn" class="select-like-btn" type="button">
+              <span id="groupPickerBtnText">Select group</span>
+              <span class="select-like-arrow">▾</span>
+            </button>
+
             <button id="addGroupBtn" class="btn small primary">+ Group</button>
-            <button id="renameGroupBtn" class="btn small">Rename</button>
+
+            <div class="group-side-actions">
+              <button id="renameGroupBtn" class="btn small">Rename</button>
+              <button id="deleteGroupBtn" class="btn small danger">Del</button>
+            </div>
+
             <button id="archiveGroupBtn" class="btn small" title="Archive / Unarchive group">📦</button>
-            <button id="deleteGroupBtn" class="btn small danger">Del</button>
           </div>
         </label>
 
@@ -313,6 +321,17 @@
     <div id="statusListBody" class="status-list-body"></div>
     <div class="modal-actions">
       <button id="statusListClose" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Group Picker Modal -->
+<div id="groupPickerModal" class="modal-backdrop" style="display:none;">
+  <div class="modal group-picker-modal">
+    <div class="modal-title">Select Group</div>
+    <div id="groupPickerList" class="group-picker-list"></div>
+    <div class="modal-actions">
+      <button id="groupPickerClose" class="btn">Close</button>
     </div>
   </div>
 </div>

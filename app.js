@@ -37,7 +37,7 @@ const grandNetEl = document.getElementById("grandNet");
 const grandMyEl = document.getElementById("grandMy");
 
 // Summary + Monthly stats
-const summarySection = document.querySelector(".summary.card");
+
 const summaryCollapseBtn = document.getElementById("summaryCollapseBtn");
 const monthPrevBtn = document.getElementById("monthPrevBtn");
 const monthNextBtn = document.getElementById("monthNextBtn");
@@ -47,10 +47,16 @@ const monthNetEl = document.getElementById("monthNet");
 const monthMyEl = document.getElementById("monthMy");
 
 // Groups UI
-const groupSelect = document.getElementById("groupSelect");
+const groupPickerBtn = document.getElementById("groupPickerBtn");
+const groupPickerBtnText = document.getElementById("groupPickerBtnText");
 const addGroupBtn = document.getElementById("addGroupBtn");
 const renameGroupBtn = document.getElementById("renameGroupBtn");
 const deleteGroupBtn = document.getElementById("deleteGroupBtn");
+
+// Group Picker Modal
+const groupPickerModal = document.getElementById("groupPickerModal");
+const groupPickerList = document.getElementById("groupPickerList");
+const groupPickerClose = document.getElementById("groupPickerClose");
 
 // Grand Total toggle
 const totalsActiveBtn = document.getElementById("totalsActiveBtn");
@@ -96,8 +102,6 @@ const statusListClose = document.getElementById("statusListClose");
 // Theme controls
 const themeSwitch = document.getElementById("themeSwitch");
 
-// Archive controls
-let showArchived = false;
 
 // Text prompt modal
 const textPromptModal = document.getElementById("textPromptModal");
@@ -635,6 +639,61 @@ function askText(title, message, defaultValue = "", okLabel = "Save") {
   });
 }
 
+function closeGroupPickerModal() {
+  if (!groupPickerModal) return;
+  groupPickerModal.style.display = "none";
+  if (groupPickerList) groupPickerList.innerHTML = "";
+}
+
+function openGroupPickerModal() {
+  if (!groupPickerModal || !groupPickerList) return;
+
+  if (!appState.groups.length) {
+    groupPickerList.innerHTML = `<div class="group-picker-empty">No groups found.</div>`;
+    groupPickerModal.style.display = "flex";
+    history.pushState({ modal: "groupPicker" }, "");
+    return;
+  }
+
+  groupPickerList.innerHTML = appState.groups.map((g) => {
+    const isActive = g.id === appState.activeGroupId;
+    const archivedClass = g.archived ? "archived" : "";
+    const activeClass = isActive ? "active" : "";
+
+    return `
+      <button
+        type="button"
+        class="group-picker-item ${activeClass} ${archivedClass}"
+        data-group-id="${g.id}"
+      >
+        <span class="group-picker-main">
+          <span class="group-picker-name">${g.archived ? "📦 " : ""}${escapeHtml(g.name)}</span>
+        </span>
+        <span class="group-picker-badge ${g.archived ? "archived-badge" : "active-badge"}">
+          ${isActive ? "Selected" : (g.archived ? "Archived" : "Active")}
+        </span>
+      </button>
+    `;
+  }).join("");
+
+  groupPickerModal.style.display = "flex";
+  history.pushState({ modal: "groupPicker" }, "");
+
+  groupPickerList.querySelectorAll(".group-picker-item").forEach((btn) => {
+    btn.onclick = () => {
+      const id = btn.dataset.groupId;
+      if (!id) return;
+
+      appState.activeGroupId = id;
+      saveState();
+      closeGroupPickerModal();
+      render();
+
+      if (appState.uiMode === "review") renderReview();
+    };
+  });
+}
+
 /* =========================
    7) Data Model
 ========================= */
@@ -817,51 +876,16 @@ function syncRootModeClass(mode = appState.uiMode) {
 }
 
 function renderGroupSelect() {
-  if (!groupSelect) return;
+  if (!groupPickerBtn || !groupPickerBtnText) return;
 
-  groupSelect.innerHTML = "";
+  const g = activeGroup();
 
-  const activeGroups = appState.groups.filter(g => !g.archived);
-  const archivedGroups = appState.groups.filter(g => g.archived);
-
-  const groupColors = [
-    'rgba(93, 212, 255, 0.15)',
-    'rgba(52, 211, 153, 0.15)',
-    'rgba(251, 191, 36, 0.15)',
-    'rgba(248, 113, 113, 0.15)',
-    'rgba(192, 132, 252, 0.15)',
-    'rgba(45, 212, 191, 0.15)',
-    'rgba(251, 146, 60, 0.15)',
-    'rgba(232, 121, 249, 0.15)',
-  ];
-
-  activeGroups.forEach((g) => {
-    const opt = document.createElement("option");
-    opt.value = g.id;
-    opt.textContent = g.name;
-    const globalIdx = appState.groups.findIndex(gr => gr.id === g.id);
-    opt.style.backgroundColor = groupColors[globalIdx % groupColors.length];
-    groupSelect.appendChild(opt);
-  });
-
-  if (archivedGroups.length > 0) {
-    const separator = document.createElement("option");
-    separator.disabled = true;
-    separator.textContent = "──────────";
-    groupSelect.appendChild(separator);
-
-    archivedGroups.forEach((g) => {
-      const opt = document.createElement("option");
-      opt.value = g.id;
-      opt.textContent = "📦 " + g.name;
-      opt.style.opacity = "0.6";
-      groupSelect.appendChild(opt);
-    });
+  if (!g) {
+    groupPickerBtnText.textContent = "Select group";
+    return;
   }
 
-  if (appState.activeGroupId) {
-    groupSelect.value = appState.activeGroupId;
-  }
+  groupPickerBtnText.textContent = g.archived ? `📦 ${g.name}` : g.name;
 }
 
 function updateGrandToggleUI() {
@@ -914,20 +938,23 @@ function setControlsForMode(mode) {
   if (totalsArchivedBtn) totalsArchivedBtn.style.display = isEdit ? "none" : "";
 
   // Review group toggle (Active/Archived) — summary კარტის ქვეშ
-  if (reviewGroupToggle) reviewGroupToggle.style.display = isEdit ? "none" : "flex";
+  if (reviewGroupToggle) {
+    const hasArchived = appState.groups.some(g => g.archived);
+    reviewGroupToggle.style.display = (!isEdit && hasArchived) ? "flex" : "none";
+  }
 
   const enableAlways = [modeEditBtn, modeReviewBtn, totalsActiveBtn, totalsAllBtn, controlsToggle];
   if (!isEdit) enableAlways.push(totalsArchivedBtn);
 
-  const enableInReview = [groupSelect, pdfAllBtn];
+  const enableInReview = [groupPickerBtn, pdfAllBtn];
   const enableInEdit = [
-    groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn, archiveGroupBtn,
+    groupPickerBtn, addGroupBtn, renameGroupBtn, deleteGroupBtn, archiveGroupBtn,
     defaultRateInput,
     addPeriodBtn, resetBtn,
   ];
 
   const all = [
-    groupSelect, addGroupBtn, renameGroupBtn, deleteGroupBtn, archiveGroupBtn,
+    groupPickerBtn, addGroupBtn, renameGroupBtn, deleteGroupBtn, archiveGroupBtn,
     defaultRateInput,
     addPeriodBtn, resetBtn,
     pdfAllBtn,
@@ -985,22 +1012,6 @@ function calcPeriodTotals(period, ratePercent) {
   return { gross, net, my };
 }
 
-function calcGrandTotalsActiveGroup() {
-  const g = activeGroup();
-  const st = g.data;
-
-  return st.periods.reduce(
-    (acc, p) => {
-      const t = calcPeriodTotals(p, st.defaultRatePercent);
-      acc.gross += t.gross;
-      acc.net += t.net;
-      acc.my += t.my;
-      return acc;
-    },
-    { gross: 0, net: 0, my: 0 }
-  );
-}
-
 function calcGrandTotalsByMode(mode = appState.grandMode) {
   const grand = { gross: 0, net: 0, my: 0 };
   const groups = getGroupsByMode(mode);
@@ -1051,11 +1062,24 @@ function calcMonthlyTotals(monthKey, mode = appState.grandMode) {
 }
 
 function calcMonthlyStatus(monthKey, mode = appState.grandMode) {
+  if (!monthKey) return { done: 0, fail: 0, fixed: 0 };
+
+  const monthStart = getMonthStart(monthKey);
+  const monthEnd = getMonthEnd(monthKey);
   const groups = getGroupsByMode(mode);
+
   let done = 0, fail = 0, fixed = 0;
 
   groups.forEach((gr) => {
     (gr.data?.periods || []).forEach((p) => {
+      const from = parseDateOnly(p.from);
+      const to = parseDateOnly(p.to);
+
+      if (!from || !to || to < from) return;
+
+      const overlap = getOverlapDaysInclusive(from, to, monthStart, monthEnd);
+      if (overlap <= 0) return;
+
       (p.rows || []).forEach((r) => {
         if (r.done === "done") done++;
         else if (r.done === "fail") fail++;
@@ -2171,23 +2195,27 @@ modeReviewBtn?.addEventListener("click", async () => {
       "Archived Group"
     );
     if (ok) {
-      // Controls გახსნა თუ დახურულია
       if (rootEl.classList.contains("controls-collapsed")) {
         setControlsCollapsed(false);
       }
-      // პირდაპირ groupSelect-ზე ფოკუსი
-      groupSelect?.focus();
+      groupPickerBtn?.focus();
+      openGroupPickerModal();
     }
     return;
   }
   setMode("review");
 });
 
-groupSelect?.addEventListener("change", () => {
-  appState.activeGroupId = groupSelect.value;
-  saveState();
-  render();
-  if (appState.uiMode === "review") renderReview();
+groupPickerBtn?.addEventListener("click", () => {
+  openGroupPickerModal();
+});
+
+groupPickerClose?.addEventListener("click", closeGroupPickerModal);
+
+groupPickerModal?.addEventListener("click", (e) => {
+  if (e.target === groupPickerModal) {
+    closeGroupPickerModal();
+  }
 });
 
 addGroupBtn?.addEventListener("click", async () => {
@@ -2546,22 +2574,6 @@ window.addEventListener("load", () => {
    22) Service Worker
 ========================= */
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js").then((reg) => {
-    reg.addEventListener("updatefound", () => {
-      const newWorker = reg.installing;
-      newWorker?.addEventListener("statechange", () => {
-        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-          const box = document.getElementById("updateBar");
-          const btn = document.getElementById("updateBtn");
-          if (box) box.style.display = "flex";
-          if (btn) btn.onclick = () => window.location.reload();
-        }
-      });
-    });
-  });
-}
-
 // PWA update detection — stable version
 if ("serviceWorker" in navigator) {
   let refreshing = false;
@@ -2572,9 +2584,7 @@ if ("serviceWorker" in navigator) {
     window.location.reload();
   });
 
-  navigator.serviceWorker.getRegistration().then((reg) => {
-    if (!reg) return;
-
+  navigator.serviceWorker.register("service-worker.js").then((reg) => {
     const showUpdateBar = (worker) => {
       const bar = document.getElementById("updateBar");
       const btn = document.getElementById("updateBtn");
@@ -2603,12 +2613,10 @@ if ("serviceWorker" in navigator) {
       }
     };
 
-    // თუ ახალი worker უკვე waiting-შია
     if (reg.waiting) {
       showUpdateBar(reg.waiting);
     }
 
-    // თუ ახლა იპოვა ახალი worker
     reg.addEventListener("updatefound", () => {
       const newWorker = reg.installing;
       if (!newWorker) return;
@@ -2622,6 +2630,8 @@ if ("serviceWorker" in navigator) {
         }
       });
     });
+  }).catch((err) => {
+    console.error("Service Worker registration failed:", err);
   });
 }
 
@@ -2668,6 +2678,12 @@ window.addEventListener("popstate", () => {
   if (confirmBackdrop && confirmBackdrop.style.display === "flex") {
     confirmBackdrop.style.display = "none";
     if (confirmNoBtn) confirmNoBtn.onclick?.();
+    return;
+  }
+
+  // groupPickerModal
+  if (groupPickerModal && groupPickerModal.style.display === "flex") {
+    closeGroupPickerModal();
     return;
   }
 

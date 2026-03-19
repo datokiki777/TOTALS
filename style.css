@@ -62,25 +62,26 @@ body{
 .controls{
   display:flex;
   flex-wrap:wrap;
-  gap:14px;
-  align-items:flex-end;
+  gap:6px;
+  align-items:flex-start;
   justify-content:space-between;
-  overflow:hidden;
+  overflow:visible;
   max-height:1200px;
   opacity:1;
 }
 
 .actions-left{
-  display:flex;
-  flex-wrap:wrap;
-  gap:14px;
-  align-items:flex-end;
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  gap:6px;
+  align-items:start;
+  width:100%;
 }
 
 .actions-right{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:8px;
   align-items:flex-end;
 }
 
@@ -107,7 +108,7 @@ body{
 .field{
   display:flex;
   flex-direction:column;
-  gap:6px;
+  gap:4px;
 }
 
 .field span{
@@ -134,10 +135,43 @@ body{
 .select{ min-width:180px; }
 
 .group-field .group-row{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "picker add rename"
+    "picker archive delete";
+  gap:6px 8px;
+  align-items:start;
+}
+
+#groupPickerBtn{
+  grid-area: picker;
+  min-width:0;
+  width:100%;
+}
+
+.group-side-actions{
+  display:contents;
+}
+
+#addGroupBtn{
+  grid-area: add;
+  min-width:96px;
+}
+
+#renameGroupBtn{
+  grid-area: rename;
+  min-width:96px;
+}
+
+#archiveGroupBtn{
+  grid-area: archive;
+  min-width:56px;
+}
+
+#deleteGroupBtn{
+  grid-area: delete;
+  min-width:96px;
 }
 
 /* =========================
@@ -2487,4 +2521,385 @@ html[data-theme="dark"] #updateBar #updateExportBtn{
     flex: 1;
     text-align: center;
   }
+}
+
+/* =========================
+   Group Picker (custom select)
+========================= */
+
+.select-like-btn{
+  min-width:180px;
+  height:38px;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.06);
+  color:var(--text);
+  outline:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+  text-align:left;
+}
+
+.select-like-btn:focus,
+.select-like-btn:hover{
+  border-color:rgba(93,212,255,.65);
+}
+
+.select-like-btn[disabled]{
+  opacity:.55;
+  pointer-events:none;
+  cursor:default;
+}
+
+#groupPickerBtnText{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.select-like-arrow{
+  flex-shrink:0;
+  opacity:.85;
+  font-size:12px;
+}
+
+.group-picker-modal{
+  width:min(520px, 100%);
+}
+
+.group-picker-list{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  max-height:min(60vh, 420px);
+  overflow:auto;
+  padding-right:2px;
+}
+
+.group-picker-item{
+  width:100%;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.05);
+  color:var(--text);
+  border-radius:14px;
+  padding:12px 14px;
+  cursor:pointer;
+  text-align:left;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.group-picker-item:hover{
+  border-color:rgba(93,212,255,.45);
+  background:rgba(255,255,255,.08);
+}
+
+.group-picker-item.active{
+  border-color:rgba(93,212,255,.55);
+  background:rgba(93,212,255,.16);
+}
+
+.group-picker-item.archived{
+  opacity:.75;
+}
+
+.group-picker-main{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.group-picker-name{
+  font-weight:800;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.group-picker-badge{
+  flex-shrink:0;
+  font-size:11px;
+  font-weight:800;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.06);
+  color:var(--muted);
+}
+
+.group-picker-badge.active-badge{
+  color:var(--accent);
+  border-color:rgba(93,212,255,.28);
+}
+
+.group-picker-badge.archived-badge{
+  color:#fbbf24;
+  border-color:rgba(251,191,36,.28);
+}
+
+.group-picker-empty{
+  padding:14px;
+  border:1px dashed var(--line);
+  border-radius:14px;
+  color:var(--muted);
+  text-align:center;
+}
+
+/* =========================
+   26) Light theme — controls bar button contrast fix
+========================= */
+
+html[data-theme="light"] .topbar{
+  background:rgba(232,238,245,.94);
+  border-bottom:1px solid rgba(15,23,42,.12);
+  box-shadow:0 8px 22px rgba(15,23,42,.06);
+}
+
+html[data-theme="light"] .controls{
+  background:rgba(255,255,255,.14);
+  border-radius:18px;
+}
+
+html[data-theme="light"] .mode-switch{
+  background:rgba(255,255,255,.72);
+  border-color:rgba(15,23,42,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.70);
+}
+
+html[data-theme="light"] .mode-switch .btn{
+  color:#475569;
+}
+
+html[data-theme="light"] .mode-switch .btn.active{
+  background:rgba(93,212,255,.24);
+  color:#0f172a;
+  border:1px solid rgba(93,212,255,.48);
+  box-shadow:0 0 0 2px rgba(93,212,255,.10) inset;
+}
+
+html[data-theme="light"] #controlsToggle{
+  background:rgba(168,85,247,.12);
+  border-color:rgba(168,85,247,.30);
+  color:#6b21a8;
+  box-shadow:0 2px 10px rgba(168,85,247,.10);
+}
+
+html[data-theme="light"] .theme-switch .slider{
+  background:rgba(255,255,255,.82);
+  border-color:rgba(15,23,42,.14);
+}
+
+html[data-theme="light"] .theme-switch .slider::before{
+  background:#ffffff;
+  box-shadow:0 2px 8px rgba(15,23,42,.16);
+}
+
+html[data-theme="light"] .field input,
+html[data-theme="light"] .select,
+html[data-theme="light"] .select-like-btn,
+html[data-theme="light"] .tbl td input,
+html[data-theme="light"] .review-search-input{
+  background:rgba(255,255,255,.82);
+  border-color:rgba(15,23,42,.18);
+  color:#0f172a;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.82),
+    0 1px 2px rgba(15,23,42,.05);
+}
+
+html[data-theme="light"] .select-like-btn:hover,
+html[data-theme="light"] .select-like-btn:focus,
+html[data-theme="light"] .field input:focus,
+html[data-theme="light"] .review-search-input:focus{
+  border-color:rgba(93,212,255,.55);
+  box-shadow:
+    0 0 0 3px rgba(93,212,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.88);
+}
+
+html[data-theme="light"] .btn{
+  background:rgba(255,255,255,.78);
+  border-color:rgba(15,23,42,.16);
+  color:#1e293b;
+  box-shadow:
+    0 2px 8px rgba(15,23,42,.08),
+    inset 0 1px 0 rgba(255,255,255,.65);
+}
+
+html[data-theme="light"] .btn:hover{
+  background:rgba(255,255,255,.92);
+  border-color:rgba(15,23,42,.24);
+}
+
+html[data-theme="light"] .btn.primary{
+  background:rgba(93,212,255,.22);
+  border-color:rgba(93,212,255,.42);
+  color:#0f172a;
+  box-shadow:
+    0 2px 8px rgba(93,212,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.45);
+}
+
+html[data-theme="light"] .btn.danger{
+  background:rgba(255,93,93,.14);
+  border-color:rgba(255,93,93,.30);
+  color:#991b1b;
+  box-shadow:
+    0 2px 8px rgba(255,93,93,.08),
+    inset 0 1px 0 rgba(255,255,255,.40);
+}
+
+/* =========================
+   27) Controls edge fix + light group picker fix
+========================= */
+
+/* controls ზონაში არაფერი მოიჭრას */
+
+.actions-left,
+.actions-right,
+.group-field,
+.group-field .group-row,
+.edit-actions,
+.review-actions{
+  min-width: 0;
+}
+
+.field span{
+  line-height: 1.2;
+}
+
+.group-field{
+  padding-left: 2px;
+  margin-bottom: 0;
+  width:100%;
+}
+
+.actions-left > .field:not(.group-field){
+  width:160px;
+  margin-top:-2px;
+}
+
+/* mobile-ზე action row ოდნავ სუფთად დაჯდეს,
+   მაგრამ ღილაკების შიდა სტილს არ შევეხოთ */
+@media (max-width:700px){
+  .actions-right{
+    width: 100%;
+  }
+
+  .edit-actions,
+  .review-actions{
+    width: 100%;
+    padding-inline: 2px;
+  }
+
+  .edit-actions .btn,
+  .review-actions .btn,
+  .review-actions .file{
+    flex: 1 1 0;
+  }
+
+  .group-field .group-row{
+  grid-template-columns:minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "picker add rename"
+    "picker archive delete";
+  gap:6px 6px;
+  align-items:start;
+}
+
+  #groupPickerBtn{
+    min-width:0;
+    width:100%;
+  }
+
+  #addGroupBtn,
+  #renameGroupBtn,
+  #deleteGroupBtn{
+  min-width:88px;
+}
+
+  #archiveGroupBtn{
+  min-width:52px;
+}
+
+.actions-left{
+    gap:4px;
+  }
+
+  .actions-left > .field:not(.group-field){
+    width:136px;
+    margin-top:-4px;
+  }
+}
+
+/* -------- Light theme: Group picker readable -------- */
+
+html[data-theme="light"] .group-picker-modal{
+  background: linear-gradient(180deg, #eef3f9 0%, #dfe8f2 100%);
+  border: 1px solid rgba(15,23,42,.14);
+  box-shadow:
+    0 20px 50px rgba(15,23,42,.18),
+    inset 0 1px 0 rgba(255,255,255,.75);
+}
+
+html[data-theme="light"] .group-picker-modal .modal-title{
+  color: #0f172a;
+}
+
+html[data-theme="light"] .group-picker-item{
+  background: rgba(255,255,255,.52);
+  border: 1px solid rgba(15,23,42,.10);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .group-picker-item:hover{
+  background: rgba(255,255,255,.74);
+  border-color: rgba(93,212,255,.34);
+}
+
+html[data-theme="light"] .group-picker-item.active{
+  background: rgba(93,212,255,.15);
+  border-color: rgba(93,212,255,.42);
+}
+
+html[data-theme="light"] .group-picker-item.archived{
+  opacity: 1;
+}
+
+html[data-theme="light"] .group-picker-name{
+  color: #1e293b;
+  font-weight: 800;
+}
+
+html[data-theme="light"] .group-picker-badge{
+  background: rgba(255,255,255,.66);
+  border: 1px solid rgba(15,23,42,.12);
+  font-weight: 800;
+}
+
+html[data-theme="light"] .group-picker-badge.active-badge{
+  color: #0891b2;
+  background: rgba(8,145,178,.10);
+  border-color: rgba(8,145,178,.22);
+}
+
+html[data-theme="light"] .group-picker-badge.archived-badge{
+  color: #b45309;
+  background: rgba(245,158,11,.10);
+  border-color: rgba(180,83,9,.20);
+}
+
+html[data-theme="light"] .group-picker-empty{
+  color: #475569;
+  background: rgba(255,255,255,.40);
+  border-color: rgba(15,23,42,.10);
 }
