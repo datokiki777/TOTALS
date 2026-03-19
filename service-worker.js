@@ -1,4 +1,4 @@
-const CACHE = "client-totals-shell-v6.0";
+const CACHE = "client-totals-shell-v6.5";
 
 const CORE_ASSETS = [
   "./",
@@ -10,7 +10,6 @@ const CORE_ASSETS = [
 
 // install
 self.addEventListener("install", (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(CORE_ASSETS))
   );
@@ -25,7 +24,7 @@ self.addEventListener("activate", (event) => {
           .filter((key) => key !== CACHE)
           .map((key) => caches.delete(key))
       )
-    ).then(() => clients.claim())
+    ).then(() => self.clients.claim())
   );
 });
 
@@ -44,11 +43,11 @@ self.addEventListener("fetch", (event) => {
 
   // HTML / navigation -> network first
   if (
-  req.mode === "navigate" ||
-  url.pathname.endsWith(".html") ||
-  url.pathname === "/" ||
-  url.pathname === ""
-) {
+    req.mode === "navigate" ||
+    url.pathname.endsWith(".html") ||
+    url.pathname === "/" ||
+    url.pathname === ""
+  ) {
     event.respondWith(
       fetch(req)
         .then((res) => {
@@ -105,9 +104,4 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.action === "skipWaiting") {
     self.skipWaiting();
   }
-
 });
-
-
-
-
