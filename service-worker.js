@@ -1,4 +1,4 @@
-const CACHE = "client-totals-shell-v9.0";
+const CACHE = "client-totals-shell-v9.5";
 
 const CORE_ASSETS = [
   "./",
