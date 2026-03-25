@@ -1316,42 +1316,48 @@ function render() {
     });
 
     fromEl?.addEventListener("change", async () => {
-      const oldFrom = p.from;
-      p.from = fromEl.value;
+  const oldFrom = p.from;
+  const newFrom = fromEl.value;
 
-      if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
+  const ok = await validatePeriodWarnings(p.id, newFrom, p.to, () => {
+    fromEl.value = oldFrom || "";
+    if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(oldFrom, p.to);
+  });
 
-      const ok = await validatePeriodWarnings(p.id, p.from, p.to, () => {
-        p.from = oldFrom;
-        fromEl.value = oldFrom || "";
-        if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
-      });
+  if (!ok) {
+    p.from = oldFrom;
+    return;
+  }
 
-      if (!ok) return;
+  p.from = newFrom;
+  if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
 
-      saveState();
-      recalcAndRenderTotals();
-      if (appState.uiMode === "review") renderReview();
-    });
+  saveState();
+  recalcAndRenderTotals();
+  if (appState.uiMode === "review") renderReview();
+});
 
     toEl?.addEventListener("change", async () => {
-      const oldTo = p.to;
-      p.to = toEl.value;
+  const oldTo = p.to;
+  const newTo = toEl.value;
 
-      if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
+  const ok = await validatePeriodWarnings(p.id, p.from, newTo, () => {
+    toEl.value = oldTo || "";
+    if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, oldTo);
+  });
 
-      const ok = await validatePeriodWarnings(p.id, p.from, p.to, () => {
-        p.to = oldTo;
-        toEl.value = oldTo || "";
-        if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
-      });
+  if (!ok) {
+    p.to = oldTo;
+    return;
+  }
 
-      if (!ok) return;
+  p.to = newTo;
+  if (collapseMeta) collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
 
-      saveState();
-      recalcAndRenderTotals();
-      if (appState.uiMode === "review") renderReview();
-    });
+  saveState();
+  recalcAndRenderTotals();
+  if (appState.uiMode === "review") renderReview();
+});
 
     if (rowsTbody) rowsTbody.innerHTML = "";
 
@@ -1876,6 +1882,39 @@ function cloneAndReIdGroup(group) {
   return g;
 }
 
+ function normalizeRowSignatureValue(v) {
+  return String(v ?? "").trim().toLowerCase();
+}
+
+function getPeriodSignature(period) {
+  const p = period || {};
+  const rows = Array.isArray(p.rows) ? p.rows : [];
+
+  const rowsSignature = rows
+    .map((r) => ({
+      customer: normalizeRowSignatureValue(r?.customer),
+      city: normalizeRowSignatureValue(r?.city),
+      gross: String(parseMoney(r?.gross || 0)),
+      net: String(parseMoney(r?.net || 0)),
+      done: normalizeRowSignatureValue(r?.done || "none"),
+    }))
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+
+  return JSON.stringify({
+    from: normalizeRowSignatureValue(p.from),
+    to: normalizeRowSignatureValue(p.to),
+    rows: rowsSignature,
+  });
+}
+
+function clonePeriodWithNewIds(period) {
+  return {
+    ...period,
+    id: uuid(),
+    rows: (period.rows || []).map((r) => ({ ...r, id: uuid() })),
+  };
+}
+
 function mergeAppState(incomingState) {
   const inc = normalizeAppState(incomingState);
 
@@ -1889,11 +1928,18 @@ function mergeAppState(incomingState) {
 
     const incomingData = normalizeGroupData(incomingGroup.data);
 
-    const appended = incomingData.periods.map((p) => ({
-      ...p,
-      id: uuid(),
-      rows: p.rows.map((r) => ({ ...r, id: uuid() })),
-    }));
+    const existingSignatures = new Set(
+      (existing.data.periods || []).map((p) => getPeriodSignature(p))
+    );
+
+    const uniqueIncomingPeriods = incomingData.periods.filter((p) => {
+      const sig = getPeriodSignature(p);
+      if (existingSignatures.has(sig)) return false;
+      existingSignatures.add(sig);
+      return true;
+    });
+
+    const appended = uniqueIncomingPeriods.map(clonePeriodWithNewIds);
 
     existing.data.periods = [...existing.data.periods, ...appended];
   });
