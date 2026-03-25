@@ -12,6 +12,9 @@ const THEME_KEY = "ct_theme_v1";
 const SUMMARY_COLLAPSED_KEY = "ct_summary_collapsed";
 const MONTH_CURSOR_KEY = "ct_month_cursor";
 const PERIODS_COLLAPSED_KEY = "ct_periods_collapsed";
+const BACKUP_REMINDER_DIRTY_KEY = "ct_backup_reminder_dirty";
+const BACKUP_REMINDER_LAST_CHANGE_KEY = "ct_backup_reminder_last_change";
+const BACKUP_REMINDER_LAST_SHOWN_KEY = "ct_backup_reminder_last_shown_week";
 
 /* =========================
    2) DOM
@@ -357,6 +360,74 @@ function formatPeriodPreview(from, to) {
   return `${left} → ${right}`;
 }
 
+ function markBackupReminderDirty() {
+  try {
+    localStorage.setItem(BACKUP_REMINDER_DIRTY_KEY, "1");
+    localStorage.setItem(BACKUP_REMINDER_LAST_CHANGE_KEY, String(Date.now()));
+  } catch {}
+}
+
+function getWeekKeyForReminder(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sunday, 1=Monday...
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+
+  const monday = new Date(d);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(d.getDate() + diffToMonday);
+
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth() + 1).padStart(2, "0");
+  const dd = String(monday.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${dd}`;
+}
+
+function isSundayAfter19(date = new Date()) {
+  return date.getDay() === 0 && date.getHours() >= 19;
+}
+
+function shouldShowBackupReminder(now = new Date()) {
+  try {
+    const dirty = localStorage.getItem(BACKUP_REMINDER_DIRTY_KEY) === "1";
+    if (!dirty) return false;
+
+    if (!isSundayAfter19(now)) return false;
+
+    const currentWeekKey = getWeekKeyForReminder(now);
+    const lastShownWeekKey = localStorage.getItem(BACKUP_REMINDER_LAST_SHOWN_KEY) || "";
+
+    if (lastShownWeekKey === currentWeekKey) return false;
+
+    const lastChangeRaw = localStorage.getItem(BACKUP_REMINDER_LAST_CHANGE_KEY);
+    if (!lastChangeRaw) return false;
+
+    const lastChange = new Date(Number(lastChangeRaw));
+    if (Number.isNaN(lastChange.getTime())) return false;
+
+    const changeWeekKey = getWeekKeyForReminder(lastChange);
+
+    return changeWeekKey === currentWeekKey;
+  } catch {
+    return false;
+  }
+}
+
+function showBackupReminderPopup() {
+  askConfirm(
+    "You made changes this week. Don't forget to create a backup.",
+    "Backup Reminder",
+    {
+      singleButton: true,
+      okText: "OK"
+    }
+  ).then(() => {
+    try {
+      localStorage.setItem(BACKUP_REMINDER_LAST_SHOWN_KEY, getWeekKeyForReminder(new Date()));
+    } catch {}
+  });
+}
+
 function getClientsByStatus(status) {
   const list = [];
   const groups = getGroupsByMode();
@@ -533,20 +604,30 @@ function hasCustomConfirm() {
   return !!(confirmBackdrop && confirmTitleEl && confirmTextEl && confirmNoBtn && confirmYesBtn);
 }
 
-function askConfirm(message, title = "Confirm") {
+function askConfirm(message, title = "Confirm", options = {}) {
   return new Promise((resolve) => {
     if (!hasCustomConfirm()) {
       resolve(window.confirm(message));
       return;
     }
 
+    const okText = options.okText || "Yes";
+    const cancelText = options.cancelText || "No";
+    const singleButton = options.singleButton === true;
+
     confirmTitleEl.textContent = title;
     confirmTextEl.textContent = message;
+
+    confirmYesBtn.textContent = okText;
+    confirmNoBtn.textContent = cancelText;
+
+    confirmNoBtn.style.display = singleButton ? "none" : "";
     confirmBackdrop.style.display = "flex";
     history.pushState({ modal: "confirm" }, "");
 
     const cleanup = () => {
       confirmBackdrop.style.display = "none";
+      confirmNoBtn.style.display = "";
       confirmNoBtn.onclick = null;
       confirmYesBtn.onclick = null;
       confirmBackdrop.onclick = null;
@@ -574,6 +655,10 @@ function askConfirm(message, title = "Confirm") {
       if (e.key === "Escape") {
         cleanup();
         resolve(false);
+      }
+      if (singleButton && (e.key === "Enter" || e.key === " ")) {
+        cleanup();
+        resolve(true);
       }
     };
   });
@@ -778,9 +863,13 @@ function normalizeAppState(s) {
   return out;
 }
 
-function saveState() {
+function saveState(options = {}) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+
+    if (!options.skipBackupReminderDirty) {
+      markBackupReminderDirty();
+    }
   } catch {}
 }
 
@@ -2381,6 +2470,9 @@ exportAllBtn?.addEventListener("click", () => {
     data: appState,
   };
   downloadJson(`client-totals-ALL-groups_${nowStamp()}.json`, payload);
+  try {
+  localStorage.setItem(BACKUP_REMINDER_DIRTY_KEY, "0");
+} catch {}
 });
 
 importAllInput?.addEventListener("change", async () => {
@@ -2603,6 +2695,11 @@ addArchiveButtonToGroupSelect();
 render();
 initStatusBadgeActions();
 setMode(appState.uiMode);
+setTimeout(() => {
+  if (shouldShowBackupReminder()) {
+    showBackupReminderPopup();
+  }
+}, 250);
 
 requestAnimationFrame(() => {
   document.body.classList.remove("booting");
