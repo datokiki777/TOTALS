@@ -1109,6 +1109,18 @@ function calcPeriodTotals(period, ratePercent) {
   return { gross, net, my };
 }
 
+function calcEditPeriodMyOnly(period, ratePercent) {
+  const rate = clampRate(ratePercent) / 100;
+
+  const my = (period.rows || []).reduce((sum, r) => {
+    const hasNet = String(r?.net ?? "").trim() !== "";
+    const base = hasNet ? parseMoney(r.net) : parseMoney(r.gross);
+    return sum + (base * rate);
+  }, 0);
+
+  return my;
+}
+
 function calcGrandTotalsByMode(mode = appState.grandMode) {
   const grand = { gross: 0, net: 0, my: 0 };
   const groups = getGroupsByMode(mode);
@@ -1259,12 +1271,15 @@ function recalcAndRenderTotals() {
       if (!p) return;
 
       const t = calcPeriodTotals(p, st.defaultRatePercent);
-      const gEl = sec.querySelector(".total-gross");
-      const nEl = sec.querySelector(".total-net");
-      const mEl = sec.querySelector(".my-eur");
-      if (gEl) gEl.textContent = fmt(t.gross);
-      if (nEl) nEl.textContent = fmt(t.net);
-      if (mEl) mEl.textContent = fmt(t.my);
+const editMy = calcEditPeriodMyOnly(p, st.defaultRatePercent);
+
+const gEl = sec.querySelector(".total-gross");
+const nEl = sec.querySelector(".total-net");
+const mEl = sec.querySelector(".my-eur");
+
+if (gEl) gEl.textContent = fmt(t.gross);
+if (nEl) nEl.textContent = fmt(t.net);
+if (mEl) mEl.textContent = fmt(editMy);
     });
   }
 
@@ -1570,9 +1585,11 @@ function render() {
     });
 
     const totals = calcPeriodTotals(p, st.defaultRatePercent);
-    if (totalGrossEl) totalGrossEl.textContent = fmt(totals.gross);
-    if (totalNetEl) totalNetEl.textContent = fmt(totals.net);
-    if (myEurEl) myEurEl.textContent = fmt(totals.my);
+const editMy = calcEditPeriodMyOnly(p, st.defaultRatePercent);
+
+if (totalGrossEl) totalGrossEl.textContent = fmt(totals.gross);
+if (totalNetEl) totalNetEl.textContent = fmt(totals.net);
+if (myEurEl) myEurEl.textContent = fmt(editMy);
 
     elPeriods.appendChild(node);
   });
