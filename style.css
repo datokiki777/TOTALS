@@ -2845,3 +2845,22 @@ html[data-theme="light"] .group-picker-empty{
   background: rgba(255,255,255,.40);
   border-color: rgba(15,23,42,.10);
 }
+
+/* =========================
+   Review Head Status Badges
+========================= */
+
+.review-head .month-badges{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.review-head .badge-done,
+.review-head .badge-fail,
+.review-head .badge-fixed{
+  min-width:34px;
+  justify-content:center;
+}

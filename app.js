@@ -1560,17 +1560,39 @@ function render() {
     });
 
     addPeriodInlineBtn?.addEventListener("click", () => {
-      st.periods.push({
-        id: uuid(),
-        from: "",
-        to: "",
-        rows: [emptyRow()],
-      });
+  const newPeriod = {
+    id: uuid(),
+    from: "",
+    to: "",
+    rows: [emptyRow()],
+  };
 
-      saveState();
-      render();
-      if (appState.uiMode === "review") renderReview();
+  st.periods.push(newPeriod);
+
+  saveState();
+  render();
+  if (appState.uiMode === "review") renderReview();
+
+  setTimeout(() => {
+    const newPeriodEl = document.querySelector(`.period[data-period-id="${newPeriod.id}"]`);
+    if (!newPeriodEl) return;
+
+    newPeriodEl.classList.remove("is-collapsed");
+    setPeriodCollapsed(newPeriod.id, false);
+
+    newPeriodEl.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
     });
+
+    const fromInput = newPeriodEl.querySelector(".fromDate");
+    if (fromInput) {
+      fromInput.focus();
+    }
+
+    updateFloatingAddClientVisibility();
+  }, 80);
+});
 
     removePeriodBtn?.addEventListener("click", async () => {
       const ok = await askConfirm("Delete this period?", "Delete period");
@@ -1847,6 +1869,14 @@ function renderReview() {
       { gross: 0, net: 0, my: 0, periods: 0, clients: 0 }
     );
 
+    const statusCounts = calcGroupStatusCounts(g);
+
+    const statusBadgesHtml = `
+      ${statusCounts.done > 0 ? `<span class="badge-done">${statusCounts.done}</span>` : ""}
+      ${statusCounts.fail > 0 ? `<span class="badge-fail">${statusCounts.fail}</span>` : ""}
+      ${statusCounts.fixed > 0 ? `<span class="badge-fixed">${statusCounts.fixed}</span>` : ""}
+    `;
+
     fullHtml += `
       <section class="review-card ${colorClass}" style="${g.archived ? 'opacity:0.7;' : ''}">
         <div class="review-head">
@@ -1854,6 +1884,12 @@ function renderReview() {
             <h3 class="review-title">${escapeHtml(g.name)}${g.archived ? ' 📦' : ''} — Review</h3>
             <div class="review-sub">${groupTotals.periods} periods • ${groupTotals.clients} rows • Default ${fmt(st.defaultRatePercent)}%</div>
           </div>
+
+          ${statusBadgesHtml.trim() ? `
+            <div class="month-badges">
+              ${statusBadgesHtml}
+            </div>
+          ` : ``}
         </div>
 
         <div class="review-kpis">
@@ -2271,7 +2307,7 @@ baseLines.forEach((ln, lineIndex) => {
 
     if (state === "done") doc.setTextColor(30, 160, 80);
     else if (state === "fail") doc.setTextColor(220, 60, 60);
-    else if (state === "fixed") doc.setTextColor(215, 170, 20);
+    else if (state === "fixed") doc.setTextColor(180, 120, 10);
 
     doc.text(statusLabel, statusX, y);
   }
