@@ -51,6 +51,7 @@ const monthGrossEl = document.getElementById("monthGross");
 const monthNetEl = document.getElementById("monthNet");
 const monthMyEl = document.getElementById("monthMy");
 const overviewDateRangeEl = document.getElementById("overviewDateRange");
+const overviewDurationEl = document.getElementById("overviewDuration");
 
 // Groups UI
 const groupPickerBtn = document.getElementById("groupPickerBtn");
@@ -124,6 +125,23 @@ const pinLockError = document.getElementById("pinLockError");
 
 let bodyOverflowBeforePinLock = "";
 
+function setAppInteractionLocked(locked) {
+  const blocks = [
+    document.querySelector(".topbar"),
+    document.querySelector(".container"),
+    document.getElementById("fabAddClient"),
+    document.getElementById("toTopBtn")
+  ];
+
+  blocks.forEach((el) => {
+    if (!el) return;
+    el.style.pointerEvents = locked ? "none" : "";
+    el.style.userSelect = locked ? "none" : "";
+  });
+
+  document.documentElement.classList.toggle("pin-locked", !!locked);
+}
+
 /* =========================
    3) App State
 ========================= */
@@ -137,6 +155,29 @@ let isUnlocked = false;
 /* =========================
    4) Utilities
 ========================= */
+
+function updateControlsButtonLabel() {
+  const btn = document.getElementById("controlsToggle");
+  if (!btn) return;
+
+  const group = activeGroup();
+
+  if (!group || !group.name || !group.name.trim()) {
+    btn.textContent = "👤 Select";
+    return;
+  }
+
+  let name = group.name.trim();
+
+  name = name.split(" ")[0];
+
+  const MAX = 8;
+  if (name.length > MAX) {
+    name = name.slice(0, MAX);
+  }
+
+  btn.textContent = `👤 ${name}`;
+}
 
 function uuid() {
   return crypto?.randomUUID?.() ?? `id-${Math.random().toString(16).slice(2)}-${Date.now()}`;
@@ -268,6 +309,7 @@ function openPinLockModal() {
 
   bodyOverflowBeforePinLock = document.body.style.overflow;
   document.body.style.overflow = "hidden";
+  setAppInteractionLocked(true);
 }
 
 function closePinLockModal() {
@@ -275,6 +317,7 @@ function closePinLockModal() {
   pinLockModal.style.display = "none";
   showPinLockError(false);
   document.body.style.overflow = bodyOverflowBeforePinLock || "";
+  setAppInteractionLocked(false);
 }
 
 function tryUnlockApp() {
@@ -390,6 +433,35 @@ function parseDateOnly(dateStr) {
   return null;
 }
 
+function getDurationMonthsDays(from, to) {
+  if (!from || !to) return { months: 0, days: 0 };
+
+  let start = new Date(from);
+  let end = new Date(to);
+
+  if (start > end) return { months: 0, days: 0 };
+
+  let months = 0;
+
+  let temp = new Date(start);
+
+  while (true) {
+    let next = new Date(temp);
+    next.setMonth(next.getMonth() + 1);
+
+    if (next <= end) {
+      temp = next;
+      months++;
+    } else {
+      break;
+    }
+  }
+
+  const days = Math.floor((end - temp) / 86400000);
+
+  return { months, days };
+}
+
 function monthKeyFromDateObj(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -493,7 +565,7 @@ function getGroupsDateRange(groups) {
   return { min, max };
 }
 
- function markBackupReminderDirty() {
+function markBackupReminderDirty() {
   try {
     localStorage.setItem(BACKUP_REMINDER_DIRTY_KEY, "1");
     localStorage.setItem(BACKUP_REMINDER_LAST_CHANGE_KEY, String(Date.now()));
@@ -602,11 +674,11 @@ function openStatusListModal(status, clients) {
     status === "fail" ? "Fail" :
     status === "fixed" ? "Fixed" :
     "Status";
-    const statusColor =
-  status === "done" ? "status-badge-done" :
-  status === "fail" ? "status-badge-fail" :
-  status === "fixed" ? "status-badge-fixed" :
-  "";
+  const statusColor =
+    status === "done" ? "status-badge-done" :
+    status === "fail" ? "status-badge-fail" :
+    status === "fixed" ? "status-badge-fixed" :
+    "";
 
   statusListTitle.innerHTML = `
   <span class="status-badge ${statusColor}">
@@ -622,55 +694,55 @@ function openStatusListModal(status, clients) {
   }
   
   function goToClientFromStatusList(item) {
-  if (!item) return;
-
-  appState.activeGroupId = item.groupId;
-  saveState();
-
-  setPeriodCollapsed(item.periodId, false);
-  setMode("edit");
-  render();
-
-  requestAnimationFrame(() => {
-    const periodEl = document.querySelector(`.period[data-period-id="${item.periodId}"]`);
-    const rowEl = document.querySelector(`tr[data-row-id="${item.rowId}"]`);
-
-    if (periodEl) {
-      periodEl.classList.remove("is-collapsed");
-    }
-
-    if (rowEl) {
-      rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
-      rowEl.classList.add("row-highlight");
-
-      setTimeout(() => {
-        rowEl.classList.remove("row-highlight");
-      }, 1800);
-    }
-  });
-}
-
-function bindStatusListItemClicks(clients) {
-  const items = document.querySelectorAll(".status-list-item");
-
-  items.forEach((el, index) => {
-    const item = clients[index];
     if (!item) return;
 
-    el.onclick = async () => {
+    appState.activeGroupId = item.groupId;
+    saveState();
+
+    setPeriodCollapsed(item.periodId, false);
+    setMode("edit");
+    render();
+
+    requestAnimationFrame(() => {
+      const periodEl = document.querySelector(`.period[data-period-id="${item.periodId}"]`);
+      const rowEl = document.querySelector(`tr[data-row-id="${item.rowId}"]`);
+
+      if (periodEl) {
+        periodEl.classList.remove("is-collapsed");
+      }
+
+      if (rowEl) {
+        rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        rowEl.classList.add("row-highlight");
+
+        setTimeout(() => {
+          rowEl.classList.remove("row-highlight");
+        }, 1800);
+      }
+    });
+  }
+
+  function bindStatusListItemClicks(clients) {
+    const items = document.querySelectorAll(".status-list-item");
+
+    items.forEach((el, index) => {
+      const item = clients[index];
+      if (!item) return;
+
+      el.onclick = async () => {
         closeStatusListModal();
 
-    const ok = await askConfirm(
-        "Do you really want to go to Edit?",
-        "Edit"
-       );
+        const ok = await askConfirm(
+          "Do you really want to go to Edit?",
+          "Edit"
+        );
 
-     if (!ok) return;
+        if (!ok) return;
 
-         goToClientFromStatusList(item);
-     };
-  });
-}
+        goToClientFromStatusList(item);
+      };
+    });
+  }
 
   statusListBody.innerHTML = clients.map((item) => `
     <div class="status-list-item">
@@ -926,7 +998,7 @@ function initTopMenu() {
   await handleImportExcelChange(e);
   menuImportExcelInput.value = "";
 });
-updateStorageIndicator();
+  updateStorageIndicator();
 }
 
 function closeGroupPickerModal() {
@@ -945,7 +1017,7 @@ function openGroupPickerModal() {
 );
 
 if (!workspaceGroups.length) {
-  groupPickerList.innerHTML = `<div class="group-picker-empty">${
+    groupPickerList.innerHTML = `<div class="group-picker-empty">${
     appState.workspaceMode === "archive"
       ? "No archived groups found."
       : "No active groups found."
@@ -985,6 +1057,14 @@ groupPickerList.innerHTML = workspaceGroups.map((g) => {
       if (!id) return;
 
       appState.activeGroupId = id;
+
+      const selectedGroup = appState.groups.find((g) => g.id === id);
+      if (selectedGroup?.archived) {
+        appState.lastActiveGroupIdArchive = id;
+      } else {
+        appState.lastActiveGroupIdActive = id;
+      }
+
       saveState();
       closeGroupPickerModal();
       render();
@@ -1016,8 +1096,11 @@ function defaultAppState() {
     archived: false, 
     data: defaultGroupData(15.0) 
   };
+
   return {
     activeGroupId: g1.id,
+    lastActiveGroupIdActive: g1.id,
+    lastActiveGroupIdArchive: "",
     groups: [g1],
     workspaceMode: "active",
     grandMode: "active",
@@ -1059,12 +1142,14 @@ function normalizeAppState(s) {
   const groups = Array.isArray(s?.groups) ? s.groups : [];
 
   const out = {
-  activeGroupId: s?.activeGroupId || "",
-  groups: [],
-  workspaceMode: s?.workspaceMode === "archive" ? "archive" : "active",
-  grandMode: s?.grandMode === "all" ? "all" : s?.grandMode === "archived" ? "archived" : "active",
-  uiMode: s?.uiMode === "edit" ? "edit" : "review",
-};
+    activeGroupId: s?.activeGroupId || "",
+    lastActiveGroupIdActive: s?.lastActiveGroupIdActive || "",
+    lastActiveGroupIdArchive: s?.lastActiveGroupIdArchive || "",
+    groups: [],
+    workspaceMode: s?.workspaceMode === "archive" ? "archive" : "active",
+    grandMode: s?.grandMode === "all" ? "all" : s?.grandMode === "archived" ? "archived" : "active",
+    uiMode: s?.uiMode === "edit" ? "edit" : "review",
+  };
 
   out.groups = (groups.length ? groups : defaultAppState().groups).map((g) => ({
     id: g?.id || uuid(),
@@ -1223,13 +1308,33 @@ function setWorkspaceMode(mode) {
   const next = mode === "archive" ? "archive" : "active";
   if (appState.workspaceMode === next) return;
 
+  const currentGroup = activeGroup();
+
+  if (appState.workspaceMode === "active") {
+    appState.lastActiveGroupIdActive = currentGroup?.id || appState.lastActiveGroupIdActive || "";
+  } else {
+    appState.lastActiveGroupIdArchive = currentGroup?.id || appState.lastActiveGroupIdArchive || "";
+  }
+
   appState.workspaceMode = next;
+
+  const rememberedId =
+    next === "archive"
+      ? appState.lastActiveGroupIdArchive
+      : appState.lastActiveGroupIdActive;
+
+  const rememberedGroup = appState.groups.find((g) =>
+    g.id === rememberedId &&
+    (next === "archive" ? g.archived === true : g.archived !== true)
+  );
 
   const firstInWorkspace = appState.groups.find((g) =>
     next === "archive" ? g.archived === true : g.archived !== true
   );
 
-  if (firstInWorkspace) {
+  if (rememberedGroup) {
+    appState.activeGroupId = rememberedGroup.id;
+  } else if (firstInWorkspace) {
     appState.activeGroupId = firstInWorkspace.id;
   }
 
@@ -1276,6 +1381,15 @@ function renderOverviewDateRange() {
     overviewDateRangeEl.textContent = "—";
     return;
   }
+  
+  if (overviewDurationEl && min && max) {
+  const { months, days } = getDurationMonthsDays(min, max);
+
+  overviewDurationEl.innerHTML = `
+    <span class="dur-months">${months} m</span>
+    <span class="dur-days">${days} d</span>
+  `;
+}
 
   if (min && max) {
     overviewDateRangeEl.textContent = `${formatDateForRange(min)} → ${formatDateForRange(max)}`;
@@ -1343,11 +1457,11 @@ function setControlsForMode(mode) {
   ];
 
   const setEl = (el, enabled) => {
-  if (!el) return;
-  if ("disabled" in el) el.disabled = !enabled;
-  el.style.pointerEvents = "";
-  el.style.opacity = enabled ? "" : "0.55";
-};
+    if (!el) return;
+    if ("disabled" in el) el.disabled = !enabled;
+    el.style.pointerEvents = "";
+    el.style.opacity = enabled ? "" : "0.55";
+  };
 
   all.forEach((el) => setEl(el, false));
   enableAlways.forEach((el) => setEl(el, true));
@@ -1358,30 +1472,30 @@ function setMode(mode) {
   appState.uiMode = mode === "edit" ? "edit" : "review";
   saveState();
   if (appState.uiMode === "edit" && appState.grandMode !== "active") {
-  appState.grandMode = "active";
-  const current = getCurrentMonthKey("active");
-  setSavedMonthCursor(current);
-  saveState();
-}
+    appState.grandMode = "active";
+    const current = getCurrentMonthKey("active");
+    setSavedMonthCursor(current);
+    saveState();
+  }
 
   modeEditBtn?.classList.toggle("active", appState.uiMode === "edit");
   modeReviewBtn?.classList.toggle("active", appState.uiMode === "review");
 
   if (editView && reviewView) {
-  const globalSearchCard = document.getElementById("globalSearchCard");
+    const globalSearchCard = document.getElementById("globalSearchCard");
 
-  if (appState.uiMode === "review") {
-    editView.hidden = true;
-    reviewView.hidden = false;
-    if (globalSearchCard) globalSearchCard.hidden = false;
-    renderReview();
-  } else {
-    reviewView.hidden = true;
-    reviewView.innerHTML = "";
-    if (globalSearchCard) globalSearchCard.hidden = true;
-    editView.hidden = false;
+    if (appState.uiMode === "review") {
+      editView.hidden = true;
+      reviewView.hidden = false;
+      if (globalSearchCard) globalSearchCard.hidden = false;
+      renderReview();
+    } else {
+      reviewView.hidden = true;
+      reviewView.innerHTML = "";
+      if (globalSearchCard) globalSearchCard.hidden = true;
+      editView.hidden = false;
+    }
   }
-}
 
   setControlsForMode(appState.uiMode);
   updateGrandToggleUI();
@@ -1562,15 +1676,15 @@ function recalcAndRenderTotals() {
       if (!p) return;
 
       const t = calcPeriodTotals(p, st.defaultRatePercent);
-const editMy = calcEditPeriodMyOnly(p, st.defaultRatePercent);
+      const editMy = calcEditPeriodMyOnly(p, st.defaultRatePercent);
 
-const gEl = sec.querySelector(".total-gross");
-const nEl = sec.querySelector(".total-net");
-const mEl = sec.querySelector(".my-eur");
+      const gEl = sec.querySelector(".total-gross");
+      const nEl = sec.querySelector(".total-net");
+      const mEl = sec.querySelector(".my-eur");
 
-if (gEl) gEl.textContent = fmt(t.gross);
-if (nEl) nEl.textContent = fmt(t.net);
-if (mEl) mEl.textContent = fmt(editMy);
+      if (gEl) gEl.textContent = fmt(t.gross);
+      if (nEl) nEl.textContent = fmt(t.net);
+      if (mEl) mEl.textContent = fmt(editMy);
     });
   }
 
@@ -1650,6 +1764,7 @@ function render() {
   renderGroupSelect();
   updateGrandToggleUI();
   updateWorkspaceSwitchUI();
+  updateControlsButtonLabel();
 
   const g = activeGroup();
   const st = g.data;
@@ -1762,8 +1877,8 @@ function render() {
       const rowNode = tplRow.content.cloneNode(true);
       const tr = rowNode.querySelector("tr");
       if (tr) {
-  tr.dataset.rowId = r.id;
-}
+        tr.dataset.rowId = r.id;
+      }
 
       const custEl = rowNode.querySelector(".cust");
       const cityEl = rowNode.querySelector(".city");
@@ -1904,11 +2019,11 @@ function render() {
     });
 
     const totals = calcPeriodTotals(p, st.defaultRatePercent);
-const editMy = calcEditPeriodMyOnly(p, st.defaultRatePercent);
+    const editMy = calcEditPeriodMyOnly(p, st.defaultRatePercent);
 
-if (totalGrossEl) totalGrossEl.textContent = fmt(totals.gross);
-if (totalNetEl) totalNetEl.textContent = fmt(totals.net);
-if (myEurEl) myEurEl.textContent = fmt(editMy);
+    if (totalGrossEl) totalGrossEl.textContent = fmt(totals.gross);
+    if (totalNetEl) totalNetEl.textContent = fmt(totals.net);
+    if (myEurEl) myEurEl.textContent = fmt(editMy);
 
     elPeriods.appendChild(node);
   });
@@ -1961,7 +2076,7 @@ function buildReviewSearchIndex() {
   return rows;
 }
 
-  function highlightMatch(text, query) {
+function highlightMatch(text, query) {
   if (!query) return escapeHtml(text);
 
   const safe = escapeHtml(text);
@@ -2019,42 +2134,42 @@ function initReviewSearch() {
   };
   
   const bindSearchResultClicks = (list) => {
-  const items = resultsEl.querySelectorAll(".review-search-item");
+    const items = resultsEl.querySelectorAll(".review-search-item");
 
-  items.forEach((el, index) => {
-    const item = list[index];
-    if (!item) return;
+    items.forEach((el, index) => {
+      const item = list[index];
+      if (!item) return;
 
-    el.style.cursor = "pointer";
+      el.style.cursor = "pointer";
 
-    el.onclick = async () => {
-      const ok = await askConfirm(
-        "Open this client in Edit mode?",
-        "Open client"
-      );
+      el.onclick = async () => {
+        const ok = await askConfirm(
+          "Open this client in Edit mode?",
+          "Open client"
+        );
 
-      if (!ok) return;
+        if (!ok) return;
 
-      searchEl.value = "";
-      resultsEl.style.display = "none";
-      resultsEl.innerHTML = "";
+        searchEl.value = "";
+        resultsEl.style.display = "none";
+        resultsEl.innerHTML = "";
 
-      goToClientFromSearch(item);
-    };
-  });
-};
+        goToClientFromSearch(item);
+      };
+    });
+  };
 
-   const renderResults = (list, q) => {
-  const limited = list.slice(0, 40);
+  const renderResults = (list, q) => {
+    const limited = list.slice(0, 40);
 
-  if (!limited.length) {
+    if (!limited.length) {
+      resultsEl.style.display = "block";
+      resultsEl.innerHTML = `<div class="review-search-empty">No results</div>`;
+      return;
+    }
+
     resultsEl.style.display = "block";
-    resultsEl.innerHTML = `<div class="review-search-empty">No results</div>`;
-    return;
-  }
-
-  resultsEl.style.display = "block";
-  resultsEl.innerHTML = limited.map(x => `
+    resultsEl.innerHTML = limited.map(x => `
     <div class="review-search-item">
       <div class="review-search-name-row">
         <div class="review-search-name">${x.groupArchived ? '📦 ' : ''}${highlightMatch(x.customer || "Client", q)}</div>
@@ -2077,10 +2192,10 @@ function initReviewSearch() {
         <span><b>Net:</b> ${escapeHtml(x.net)}</span>
       </div>
     </div>
-  `).join("");
+    `).join("");
 
-  bindSearchResultClicks(limited);
-};
+    bindSearchResultClicks(limited);
+  };
 
   searchEl.oninput = () => {
     const q = searchEl.value.trim().toLowerCase();
@@ -2324,7 +2439,7 @@ function cloneAndReIdGroup(group) {
   return g;
 }
 
- function normalizeRowSignatureValue(v) {
+function normalizeRowSignatureValue(v) {
   return String(v ?? "").trim().toLowerCase();
 }
 
@@ -2391,7 +2506,7 @@ function mergeAppState(incomingState) {
   }
 }
 
-  function calcGroupStatusCounts(group) {
+function calcGroupStatusCounts(group) {
   let done = 0;
   let fail = 0;
   let fixed = 0;
@@ -2407,7 +2522,7 @@ function mergeAppState(incomingState) {
   return { done, fail, fixed };
 }
 
-  function calcOverallStatusCounts() {
+function calcOverallStatusCounts() {
   let done = 0;
   let fail = 0;
   let fixed = 0;
@@ -2515,20 +2630,20 @@ function exportPdfAllGroups() {
   );
   addPageIfNeeded(lineH);
 
-doc.setFont("helvetica", "bold");
-doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
 
-doc.setTextColor(30, 160, 80);
-doc.text(`Done: ${overallStatus.done}`, margin, y);
+  doc.setTextColor(30, 160, 80);
+  doc.text(`Done: ${overallStatus.done}`, margin, y);
 
-doc.setTextColor(220, 60, 60);
-doc.text(`Fail: ${overallStatus.fail}`, margin + 40, y);
+  doc.setTextColor(220, 60, 60);
+  doc.text(`Fail: ${overallStatus.fail}`, margin + 40, y);
 
-doc.setTextColor(215, 170, 20);
-doc.text(`Fixed: ${overallStatus.fixed}`, margin + 70, y);
+  doc.setTextColor(215, 170, 20);
+  doc.text(`Fixed: ${overallStatus.fixed}`, margin + 70, y);
 
-doc.setTextColor(0, 0, 0);
-y += lineH;
+  doc.setTextColor(0, 0, 0);
+  y += lineH;
   hr();
 
   groupsData.forEach(({ gr, st, groupTotals }, gi) => {
@@ -2541,21 +2656,21 @@ y += lineH;
       false
     );
     addPageIfNeeded(lineH);
-     doc.setFont("helvetica", "bold");
-     doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
 
-     doc.setTextColor(30, 160, 80);
-     doc.text(`Done: ${statusCounts.done}`, margin, y);
+      doc.setTextColor(30, 160, 80);
+      doc.text(`Done: ${statusCounts.done}`, margin, y);
 
-     doc.setTextColor(220, 60, 60);
-     doc.text(`Fail: ${statusCounts.fail}`, margin + 34, y);
+      doc.setTextColor(220, 60, 60);
+      doc.text(`Fail: ${statusCounts.fail}`, margin + 34, y);
 
-     doc.setTextColor(215, 170, 20);
-     doc.text(`Fixed: ${statusCounts.fixed}`, margin + 64, y);
+      doc.setTextColor(215, 170, 20);
+      doc.text(`Fixed: ${statusCounts.fixed}`, margin + 64, y);
 
-    doc.setTextColor(0, 0, 0);
+      doc.setTextColor(0, 0, 0);
       y += lineH;
-        textLine(
+      textLine(
       `Gross: ${money(groupTotals.gross)}   Net: ${money(groupTotals.net)}   My €: ${money(groupTotals.my)}`,
       11,
       true
@@ -2583,39 +2698,39 @@ y += lineH;
 
         const state = ["none", "done", "fail", "fixed"].includes(r.done) ? r.done : "none";
 
-const baseText = `• ${name} [${city}] | Gross: ${rg} | Net: ${rn}`;
-const statusLabel =
-  state === "done" ? " Done"
-  : state === "fail" ? " Fail"
-  : state === "fixed" ? " Fixed"
-  : "";
+        const baseText = `• ${name} [${city}] | Gross: ${rg} | Net: ${rn}`;
+        const statusLabel =
+          state === "done" ? " Done"
+          : state === "fail" ? " Fail"
+          : state === "fixed" ? " Fixed"
+          : "";
 
-doc.setFont("helvetica", "normal");
-doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
 
-const baseLines = doc.splitTextToSize(baseText, maxW);
+        const baseLines = doc.splitTextToSize(baseText, maxW);
 
-baseLines.forEach((ln, lineIndex) => {
-  addPageIfNeeded(lineH);
+        baseLines.forEach((ln, lineIndex) => {
+          addPageIfNeeded(lineH);
 
-  doc.setTextColor(0, 0, 0);
-  doc.text(ln, margin, y);
+          doc.setTextColor(0, 0, 0);
+          doc.text(ln, margin, y);
 
-  if (lineIndex === baseLines.length - 1 && statusLabel) {
-    const baseWidth = doc.getTextWidth(ln);
-    const statusX = margin + baseWidth + 2;
+          if (lineIndex === baseLines.length - 1 && statusLabel) {
+            const baseWidth = doc.getTextWidth(ln);
+            const statusX = margin + baseWidth + 2;
 
-    if (state === "done") doc.setTextColor(30, 160, 80);
-    else if (state === "fail") doc.setTextColor(220, 60, 60);
-    else if (state === "fixed") doc.setTextColor(180, 120, 10);
+            if (state === "done") doc.setTextColor(30, 160, 80);
+            else if (state === "fail") doc.setTextColor(220, 60, 60);
+            else if (state === "fixed") doc.setTextColor(180, 120, 10);
 
-    doc.text(statusLabel, statusX, y);
-  }
+            doc.text(statusLabel, statusX, y);
+          }
 
-  y += lineH;
-});
+          y += lineH;
+        });
 
-doc.setTextColor(0, 0, 0);
+        doc.setTextColor(0, 0, 0);
       });
 
       hr();
@@ -2731,6 +2846,7 @@ addGroupBtn?.addEventListener("click", async () => {
 
   appState.groups.push(g);
   appState.activeGroupId = g.id;
+  appState.lastActiveGroupIdActive = g.id;
   saveState();
 
   render();
@@ -2767,7 +2883,20 @@ deleteGroupBtn?.addEventListener("click", async () => {
   if (!ok) return;
 
   appState.groups = appState.groups.filter((x) => x.id !== g.id);
-  appState.activeGroupId = appState.groups[0].id;
+
+  const nextGroup = appState.groups.find((x) =>
+    appState.workspaceMode === "archive"
+      ? x.archived === true
+      : x.archived !== true
+  ) || appState.groups[0];
+
+  appState.activeGroupId = nextGroup?.id || "";
+
+  if (appState.workspaceMode === "archive") {
+    appState.lastActiveGroupIdArchive = appState.activeGroupId;
+  } else {
+    appState.lastActiveGroupIdActive = appState.activeGroupId;
+  }
 
   saveState();
   render();
@@ -2844,8 +2973,8 @@ function handleExportJson() {
   };
   downloadJson(`client-totals-ALL-groups_${nowStamp()}.json`, payload);
   try {
-  localStorage.setItem(BACKUP_REMINDER_DIRTY_KEY, "0");
-} catch {}
+    localStorage.setItem(BACKUP_REMINDER_DIRTY_KEY, "0");
+  } catch {}
 }
 
 async function handleImportJsonChange(e) {
@@ -3154,6 +3283,7 @@ async function handleImportExcelChange(e) {
     }
 
     const groupMap = new Map();
+    const rateConflicts = [];
 
     rows.forEach((row) => {
       const rawGroupName = String(row.Group || "").trim() || "Group";
@@ -3162,7 +3292,11 @@ async function handleImportExcelChange(e) {
         rawGroupName.startsWith("📦 ");
 
       const cleanGroupName = rawGroupName.replace(/^📦\s*/, "").trim() || "Group";
-      const rate = clampRate(Number(row.DefaultRatePercent || 0));
+
+      const rawRateValue = String(row.DefaultRatePercent ?? "").trim();
+      const parsedRate = rawRateValue === "" ? NaN : Number(rawRateValue);
+      const hasValidRate = Number.isFinite(parsedRate) && parsedRate >= 0 && parsedRate <= 100;
+      const rate = hasValidRate ? clampRate(parsedRate) : null;
 
       const key = `${cleanGroupName}__${isArchived ? "1" : "0"}`;
 
@@ -3172,21 +3306,28 @@ async function handleImportExcelChange(e) {
           name: cleanGroupName,
           archived: isArchived,
           data: {
-            defaultRatePercent: rate,
+            defaultRatePercent: rate ?? 0,
             periods: []
-          }
+          },
+          _firstRateSeen: rate,
+          _rateConflict: false
         });
       }
 
       const group = groupMap.get(key);
       if (!group) return;
 
-      if (
-        Number.isFinite(rate) &&
-        rate >= 0 &&
-        group.data.defaultRatePercent !== rate
-      ) {
-        group.data.defaultRatePercent = rate;
+      if (rate !== null) {
+        if (group._firstRateSeen === null || group._firstRateSeen === undefined) {
+          group._firstRateSeen = rate;
+          group.data.defaultRatePercent = rate;
+        } else if (group._firstRateSeen !== rate) {
+          group._rateConflict = true;
+
+          if (!rateConflicts.includes(`${isArchived ? "📦 " : ""}${cleanGroupName}`)) {
+            rateConflicts.push(`${isArchived ? "📦 " : ""}${cleanGroupName}`);
+          }
+        }
       }
 
       const from = String(row.From || "").trim();
@@ -3216,6 +3357,12 @@ async function handleImportExcelChange(e) {
           ? String(row.Status || "").trim()
           : "none"
       });
+    });
+
+    groupMap.forEach((g) => {
+      if (!Number.isFinite(g.data.defaultRatePercent)) {
+        g.data.defaultRatePercent = 0;
+      }
     });
 
     const importedGroups = [...groupMap.values()].map((g) => ({
@@ -3257,7 +3404,16 @@ async function handleImportExcelChange(e) {
     render();
     if (appState.uiMode === "review") renderReview();
 
-    alert("Excel imported successfully.");
+    if (rateConflicts.length) {
+      alert(
+        "Excel imported successfully.\n\n" +
+        "Rate conflict detected in these groups:\n" +
+        rateConflicts.join("\n") +
+        "\n\nUsed: first valid Default Rate found for each group."
+      );
+    } else {
+      alert("Excel imported successfully.");
+    }
   } catch (err) {
     console.error(err);
     alert("Excel import failed.");
@@ -3308,6 +3464,12 @@ function toggleArchiveGroup(groupId) {
 
   if (firstInWorkspace) {
     appState.activeGroupId = firstInWorkspace.id;
+
+    if (appState.workspaceMode === "archive") {
+      appState.lastActiveGroupIdArchive = firstInWorkspace.id;
+    } else {
+      appState.lastActiveGroupIdActive = firstInWorkspace.id;
+    }
   }
 
   if (appState.uiMode === "edit") {
@@ -3396,31 +3558,31 @@ if ("serviceWorker" in navigator) {
 
   navigator.serviceWorker.register("service-worker.js").then((reg) => {
     const showUpdateBar = (worker) => {
-  const bar = document.getElementById("updateBar");
-  const btn = document.getElementById("updateBtn");
-  const exportBtn = document.getElementById("updateExportBtn");
+      const bar = document.getElementById("updateBar");
+      const btn = document.getElementById("updateBtn");
+      const exportBtn = document.getElementById("updateExportBtn");
 
-  if (bar) bar.style.display = "flex";
+      if (bar) bar.style.display = "flex";
 
-  if (exportBtn) {
-    exportBtn.onclick = () => {
-      handleExportJson();
-    };
-  }
+      if (exportBtn) {
+        exportBtn.onclick = () => {
+          handleExportJson();
+        };
+      }
 
-  if (btn) {
-    btn.onclick = () => {
-      btn.disabled = true;
-      btn.textContent = "Updating...";
+      if (btn) {
+        btn.onclick = () => {
+          btn.disabled = true;
+          btn.textContent = "Updating...";
 
-      if (worker) {
-        worker.postMessage({ action: "skipWaiting" });
-      } else {
-        window.location.reload();
+          if (worker) {
+            worker.postMessage({ action: "skipWaiting" });
+          } else {
+            window.location.reload();
+          }
+        };
       }
     };
-  }
-};
 
     if (reg.waiting) {
       showUpdateBar(reg.waiting);
@@ -3515,3 +3677,4 @@ window.addEventListener("popstate", () => {
     return;
   }
 });
+

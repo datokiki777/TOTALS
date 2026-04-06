@@ -966,9 +966,12 @@ html[data-theme="light"] .workspace-btn.active{
 
 #controlsToggle{
   margin:0;
-  white-space:nowrap;
   flex-shrink:0;
-  min-width:154px;
+  width:120px;
+  min-width:120px;
+  max-width:120px;
+  overflow:hidden;
+  white-space:nowrap;
   text-align:center;
   background:rgba(168,85,247,.16);
   border-color:rgba(168,85,247,.35);
@@ -3168,6 +3171,16 @@ html[data-theme="light"] .overview-date-value{
   opacity:1;
 }
 
+html[data-theme="light"] .overview-duration{
+  color:#334155;
+  opacity:1;
+}
+
+html[data-theme="light"] .overview-duration .dur-months,
+html[data-theme="light"] .overview-duration .dur-days{
+  color:#334155;
+}
+
 html[data-theme="light"] .top-menu-btn{
   background:rgba(255,255,255,.72);
   border-color:rgba(15,23,42,.12);
@@ -3384,4 +3397,52 @@ html[data-theme="dark"] #installBar #installBtn{
   width: 100% !important;
   margin: 0 !important;
 }
+}
+
+.overview-date-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 10px;
+}
+
+.overview-date-label {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.overview-date-value {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.overview-duration {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.15;
+  color: var(--text);
+  opacity: 0.95;
+  min-width: 38px;
+}
+
+.overview-duration span {
+  letter-spacing: 0.2px;
+}
+
+/* =========================
+   Pin Lock — Visual Blur
+========================= */
+
+html.pin-locked .topbar,
+html.pin-locked .container,
+html.pin-locked .fab-add-client,
+html.pin-locked .to-top {
+  filter: blur(2px);
 }
