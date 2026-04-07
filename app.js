@@ -733,9 +733,10 @@ function openStatusListModal(status, clients) {
         closeStatusListModal();
 
         const ok = await askConfirm(
-          "Do you really want to go to Edit?",
-          "Edit"
-        );
+  "Do you really want to go to Edit?",
+  "Edit",
+  { type: "primary", okText: "Open" }
+);
 
         if (!ok) return;
 
@@ -837,6 +838,14 @@ function askConfirm(message, title = "Confirm", options = {}) {
 
     confirmYesBtn.textContent = okText;
     confirmNoBtn.textContent = cancelText;
+    confirmYesBtn.classList.remove("btn-danger", "btn-primary");
+    confirmNoBtn.classList.remove("btn-danger", "btn-primary");
+
+if (options.type === "danger") {
+  confirmYesBtn.classList.add("btn-danger");
+} else if (options.type === "primary") {
+  confirmYesBtn.classList.add("btn-primary");
+}
 
     confirmNoBtn.style.display = singleButton ? "none" : "";
     confirmBackdrop.style.display = "flex";
@@ -1745,9 +1754,10 @@ function isPeriodReversed(from, to) {
 async function validatePeriodWarnings(periodId, from, to, revertFn) {
   if (from && to && isPeriodReversed(from, to)) {
     const ok = await askConfirm(
-      "From date is later than To date. Is that correct?",
-      "Invalid period"
-    );
+  "From date is later than To date. Is that correct?",
+  "Invalid period",
+  { type: "primary", okText: "Keep" }
+);
     if (!ok) {
       revertFn();
       return false;
@@ -1756,9 +1766,10 @@ async function validatePeriodWarnings(periodId, from, to, revertFn) {
 
   if (from && to && hasOverlappingPeriodInActiveGroup(periodId, from, to)) {
     const ok = await askConfirm(
-      "This period overlaps with another period in this group. Is that correct?",
-      "Overlapping period"
-    );
+  "This period overlaps with another period in this group. Is that correct?",
+  "Overlapping period",
+  { type: "primary", okText: "Keep" }
+);
     if (!ok) {
       revertFn();
       return false;
@@ -1952,7 +1963,11 @@ function render() {
       });
 
       removeRowBtn?.addEventListener("click", async () => {
-        const ok = await askConfirm("Delete this client row?", "Delete row");
+        const ok = await askConfirm(
+  "Delete this client row?",
+  "Delete row",
+  { type: "danger", okText: "Delete" }
+);
         if (!ok) return;
 
         p.rows = p.rows.filter((x) => x.id !== r.id);
@@ -2019,7 +2034,11 @@ function render() {
 });
 
     removePeriodBtn?.addEventListener("click", async () => {
-      const ok = await askConfirm("Delete this period?", "Delete period");
+      const ok = await askConfirm(
+  "Delete this period?",
+  "Delete period",
+  { type: "danger", okText: "Delete" }
+);
       if (!ok) return;
 
       st.periods = st.periods.filter((x) => x.id !== p.id);
@@ -2156,9 +2175,10 @@ function initReviewSearch() {
 
       el.onclick = async () => {
         const ok = await askConfirm(
-          "Open this client in Edit mode?",
-          "Open client"
-        );
+  "Open this client in Edit mode?",
+  "Open client",
+  { type: "primary", okText: "Open" }
+);
 
         if (!ok) return;
 
@@ -2815,6 +2835,34 @@ function addClientToLastPeriod() {
 
 modeEditBtn?.addEventListener("click", () => setMode("edit"));
 modeReviewBtn?.addEventListener("click", () => setMode("review"));
+// Grand Total toggle - აკლია event listeners
+totalsActiveBtn?.addEventListener("click", () => {
+  if (appState.grandMode === "active") return;
+  appState.grandMode = "active";
+  saveState();
+  updateGrandToggleUI();
+  
+  const current = getCurrentMonthKey("active");
+  setSavedMonthCursor(current);
+  
+  render();
+  if (appState.uiMode === "review") renderReview();
+  renderMonthlyStats();
+});
+
+totalsAllBtn?.addEventListener("click", () => {
+  if (appState.grandMode === "all") return;
+  appState.grandMode = "all";
+  saveState();
+  updateGrandToggleUI();
+  
+  const current = getCurrentMonthKey("all");
+  setSavedMonthCursor(current);
+  
+  render();
+  if (appState.uiMode === "review") renderReview();
+  renderMonthlyStats();
+});
 
 groupPickerBtn?.addEventListener("click", () => {
   openGroupPickerModal();
@@ -2886,12 +2934,20 @@ renameGroupBtn?.addEventListener("click", async () => {
 
 deleteGroupBtn?.addEventListener("click", async () => {
   if (appState.groups.length <= 1) {
-    alert("You must keep at least 1 group.");
-    return;
-  }
+  await askConfirm(
+    "You must keep at least 1 group.",
+    "Delete group",
+    { singleButton: true, okText: "OK" }
+  );
+  return;
+}
 
   const g = activeGroup();
-  const ok = await askConfirm(`Delete group "${g.name}"?`, "Delete group");
+  const ok = await askConfirm(
+  `Delete group "${g.name}"?`,
+  "Delete group",
+  { type: "danger", okText: "Delete" }
+);
   if (!ok) return;
 
   appState.groups = appState.groups.filter((x) => x.id !== g.id);
@@ -2967,7 +3023,11 @@ addPeriodBtn?.addEventListener("click", () => {
 
 resetBtn?.addEventListener("click", async () => {
   const g = activeGroup();
-  const ok = await askConfirm(`Reset group "${g.name}"? This will clear all its data.`, "Reset group");
+  const ok = await askConfirm(
+  `Reset group "${g.name}"? This will clear all its data.`,
+  "Reset group",
+  { type: "danger", okText: "Reset" }
+);
   if (!ok) return;
 
   g.data = defaultGroupData();
@@ -2976,17 +3036,25 @@ resetBtn?.addEventListener("click", async () => {
   if (appState.uiMode === "review") renderReview();
 });
 
-function handleExportJson() {
+async function handleExportJson() {
   const payload = {
     __type: "client_totals_all_groups",
     __ver: 1,
     exportedAt: new Date().toISOString(),
     data: appState,
   };
+
   downloadJson(`client-totals-ALL-groups_${nowStamp()}.json`, payload);
+
   try {
     localStorage.setItem(BACKUP_REMINDER_DIRTY_KEY, "0");
   } catch {}
+
+  await askConfirm(
+    "JSON exported successfully.",
+    "Export JSON",
+    { singleButton: true, okText: "OK" }
+  );
 }
 
 async function handleImportJsonChange(e) {
@@ -3005,28 +3073,39 @@ async function handleImportJsonChange(e) {
     }
 
     if (!incoming) {
-      alert("Import failed: wrong file format.");
+      await askConfirm(
+        "Import failed: wrong file format.",
+        "Import JSON",
+        { singleButton: true, okText: "OK" }
+      );
       return;
     }
 
     const doMerge = await askConfirm(
-      "Import mode: MERGE into current data? (Yes = Merge, No = Next)",
-      "Import all groups"
-    );
+  `Import JSON file:\n${file.name}\n\nDo you want to merge this file into your current data?`,
+  "Import JSON",
+  { type: "primary", okText: "Merge" }
+);
 
     if (doMerge) {
       mergeAppState(incoming);
       saveState();
       render();
       if (appState.uiMode === "review") renderReview();
-      alert("Merged successfully.");
+
+      await askConfirm(
+  "JSON file merged successfully.",
+  "Import JSON",
+  { singleButton: true, okText: "OK" }
+);
       return;
     }
 
     const doReplace = await askConfirm(
-      "Import mode: REPLACE all current data on this device? (Yes = Replace, No = Cancel)",
-      "Import all groups"
-    );
+  `Merge was not selected.\n\nDo you want to replace all current data on this device with:\n${file.name}\n\nThis cannot be undone.`,
+  "Import JSON",
+  { type: "danger", okText: "Replace" }
+);
 
     if (!doReplace) return;
 
@@ -3034,35 +3113,20 @@ async function handleImportJsonChange(e) {
     saveState();
     render();
     if (appState.uiMode === "review") renderReview();
-    alert("Imported successfully.");
+
+    await askConfirm(
+  "JSON file imported successfully.",
+  "Import JSON",
+  { singleButton: true, okText: "OK" }
+);
   } catch {
-    alert("Import failed: invalid JSON file.");
+    await askConfirm(
+      "Import failed: invalid JSON file.",
+      "Import JSON",
+      { singleButton: true, okText: "OK" }
+    );
   }
 }
-
-totalsActiveBtn?.addEventListener("click", () => {
-  appState.grandMode = "active";
-  saveState();
-
-  const current = getCurrentMonthKey("active");
-  setSavedMonthCursor(current);
-
-  updateGrandToggleUI();
-  recalcAndRenderTotals();
-  if (appState.uiMode === "review") renderReview();
-});
-
-totalsAllBtn?.addEventListener("click", () => {
-  appState.grandMode = "all";
-  saveState();
-
-  const current = getCurrentMonthKey("all");
-  setSavedMonthCursor(current);
-
-  updateGrandToggleUI();
-  recalcAndRenderTotals();
-  if (appState.uiMode === "review") renderReview();
-});
 
 function handleExportPdf() {
   const oldText = menuPdfBtn?.textContent || "Export PDF";
@@ -3106,7 +3170,7 @@ statusListModal?.addEventListener("click", (e) => {
   }
 });
 
-function handleExportExcel() {
+async function handleExportExcel() {
   try {
     if (typeof XLSX === "undefined") {
       alert("XLSX library is missing.");
@@ -3213,9 +3277,18 @@ function handleExportExcel() {
 
     const fileName = `client-totals_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, fileName);
+    await askConfirm(
+  "Excel exported successfully.",
+  "Export Excel",
+  { singleButton: true, okText: "OK" }
+);
   } catch (err) {
     console.error(err);
-    alert("Excel export failed.");
+    await askConfirm(
+  "Excel export failed.",
+  "Export Excel",
+  { singleButton: true, okText: "OK" }
+);
   }
 }
 
@@ -3273,7 +3346,11 @@ async function handleImportExcelChange(e) {
 
   try {
     if (typeof XLSX === "undefined") {
-      alert("XLSX library is missing.");
+      await askConfirm(
+        "XLSX library is missing.",
+        "Import Excel",
+        { singleButton: true, okText: "OK" }
+      );
       return;
     }
 
@@ -3282,7 +3359,11 @@ async function handleImportExcelChange(e) {
     const firstSheetName = workbook.SheetNames[0];
 
     if (!firstSheetName) {
-      alert("Excel import failed: sheet not found.");
+      await askConfirm(
+        "Excel import failed: sheet not found.",
+        "Import Excel",
+        { singleButton: true, okText: "OK" }
+      );
       return;
     }
 
@@ -3290,7 +3371,11 @@ async function handleImportExcelChange(e) {
     const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
     if (!rows.length) {
-      alert("Excel import failed: file is empty.");
+      await askConfirm(
+        "Excel import failed: file is empty.",
+        "Import Excel",
+        { singleButton: true, okText: "OK" }
+      );
       return;
     }
 
@@ -3393,14 +3478,19 @@ async function handleImportExcelChange(e) {
     }));
 
     if (!importedGroups.length) {
-      alert("Excel import failed: no valid rows found.");
+      await askConfirm(
+        "Excel import failed: no valid rows found.",
+        "Import Excel",
+        { singleButton: true, okText: "OK" }
+      );
       return;
     }
 
     const okReplace = await askConfirm(
-      "Replace all current app data with this Excel file?",
-      "Import Excel"
-    );
+  `Import Excel file:\n${file.name}\n\nDo you want to replace all current app data with this file?\n\nThis cannot be undone.`,
+  "Import Excel",
+  { type: "danger", okText: "Replace" }
+);
 
     if (!okReplace) return;
 
@@ -3417,18 +3507,28 @@ async function handleImportExcelChange(e) {
     if (appState.uiMode === "review") renderReview();
 
     if (rateConflicts.length) {
-      alert(
-        "Excel imported successfully.\n\n" +
-        "Rate conflict detected in these groups:\n" +
-        rateConflicts.join("\n") +
-        "\n\nUsed: first valid Default Rate found for each group."
-      );
+      await askConfirm(
+  "Excel imported successfully.\n\n" +
+  "Different Default Rate values were found in these groups:\n\n" +
+  rateConflicts.join("\n") +
+  "\n\nFor each group, the first valid Default Rate was used.",
+  "Import Excel",
+  { singleButton: true, okText: "OK" }
+);
     } else {
-      alert("Excel imported successfully.");
+      await askConfirm(
+  "Excel file imported successfully.",
+  "Import Excel",
+  { singleButton: true, okText: "OK" }
+);
     }
   } catch (err) {
     console.error(err);
-    alert("Excel import failed.");
+    await askConfirm(
+      "Excel import failed.",
+      "Import Excel",
+      { singleButton: true, okText: "OK" }
+    );
   }
 }
 
@@ -3507,7 +3607,11 @@ function addArchiveButtonToGroupSelect() {
     const g = appState.groups.find(x => x.id === appState.activeGroupId) || activeGroup();
     if (!g) return;
     const label = g.archived ? "Unarchive" : "Archive";
-    askConfirm(`${label} group "${g.name}"?`, `${label} Group`).then((ok) => {
+    askConfirm(
+  `${label} group "${g.name}"?`,
+  `${label} Group`,
+  { type: "primary", okText: label }
+).then((ok) => {
       if (!ok) return;
       toggleArchiveGroup(g.id);
     });

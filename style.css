@@ -3551,3 +3551,84 @@ html[data-theme="light"] .kpi{
     inset 0 1px 0 rgba(255,255,255,.75),
     0 4px 12px rgba(15,23,42,.05);
 }
+
+/* ===== MENU COLOR GROUPS ===== */
+
+/* JSON (Blue) */
+.menu-json{
+  background:rgba(93,212,255,.15);
+  border:1px solid rgba(93,212,255,.35);
+}
+
+.menu-json:hover{
+  background:rgba(93,212,255,.25);
+}
+
+/* PDF (Purple) */
+.menu-pdf{
+  background:rgba(139,92,246,.15);
+  border:1px solid rgba(139,92,246,.35);
+}
+
+.menu-pdf:hover{
+  background:rgba(139,92,246,.25);
+}
+
+/* Excel (Green) */
+.menu-excel{
+  background:rgba(52,211,153,.15);
+  border:1px solid rgba(52,211,153,.35);
+}
+
+.menu-excel:hover{
+  background:rgba(52,211,153,.25);
+}
+
+/* ===== LIGHT THEME ===== */
+
+html[data-theme="light"] .menu-json{
+  background:rgba(93,212,255,.25);
+  border:1px solid rgba(93,212,255,.45);
+}
+
+html[data-theme="light"] .menu-pdf{
+  background:rgba(139,92,246,.25);
+  border:1px solid rgba(139,92,246,.45);
+}
+
+html[data-theme="light"] .menu-excel{
+  background:rgba(52,211,153,.25);
+  border:1px solid rgba(52,211,153,.45);
+}
+
+.btn-danger{
+  background: rgba(239,68,68,.15);
+  border: 1px solid rgba(239,68,68,.35);
+  color: #ef4444;
+}
+
+.btn-danger:hover{
+  background: rgba(239,68,68,.25);
+}
+
+.btn-primary{
+  background: rgba(59,130,246,.15);
+  border: 1px solid rgba(59,130,246,.35);
+  color: #3b82f6;
+}
+
+.btn-primary:hover{
+  background: rgba(59,130,246,.25);
+}
+
+html[data-theme="light"] .btn-danger{
+  background: rgba(239,68,68,.14);
+  border: 1px solid rgba(239,68,68,.30);
+  color: #b91c1c;
+}
+
+html[data-theme="light"] .btn-primary{
+  background: rgba(59,130,246,.14);
+  border: 1px solid rgba(59,130,246,.30);
+  color: #1d4ed8;
+}

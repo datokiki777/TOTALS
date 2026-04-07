@@ -353,18 +353,27 @@ if (themeColorMeta) {
 <div id="topMenuBackdrop" class="top-menu-backdrop" style="display:none;">
   <div id="topMenuPanel" class="top-menu-panel">
 
-    <button id="menuExportJsonBtn" class="top-menu-item" type="button">Export JSON</button>
+    <!-- JSON -->
+    <button id="menuExportJsonBtn" class="top-menu-item menu-json" type="button">
+      Export JSON
+    </button>
 
-    <label class="top-menu-item top-menu-file" for="menuImportJsonInput">
+    <label class="top-menu-item menu-json top-menu-file" for="menuImportJsonInput">
       Import JSON
     </label>
     <input id="menuImportJsonInput" type="file" accept="application/json" hidden />
 
-    <button id="menuPdfBtn" class="top-menu-item" type="button">Export PDF</button>
+    <!-- PDF -->
+    <button id="menuPdfBtn" class="top-menu-item menu-pdf" type="button">
+      Export PDF
+    </button>
 
-    <button id="menuExportExcelBtn" class="top-menu-item" type="button">Export Excel</button>
+    <!-- Excel -->
+    <button id="menuExportExcelBtn" class="top-menu-item menu-excel" type="button">
+      Export Excel
+    </button>
 
-    <label class="top-menu-item top-menu-file" for="menuImportExcelInput">
+    <label class="top-menu-item menu-excel top-menu-file" for="menuImportExcelInput">
       Import Excel
     </label>
     <input
@@ -373,6 +382,16 @@ if (themeColorMeta) {
       accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
       hidden
     />
+
+    <!-- Storage -->
+    <div class="top-menu-item storage-box">
+      <div>Storage</div>
+      <div class="storage-bar"></div>
+      <div class="storage-text">0.01 MB used</div>
+    </div>
+
+  </div>
+</div>
 
     <!-- ✅ Storage Indicator -->
     <div class="storage-box">
