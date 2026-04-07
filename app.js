@@ -3550,8 +3550,8 @@ window.addEventListener("load", () => {
 
     setTimeout(() => {
       splash?.remove();
-    }, 300);
-  }, 120);
+    }, 450);
+  }, 700);
 });
 
 /* =========================
