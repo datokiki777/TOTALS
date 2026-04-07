@@ -1,0 +1,112 @@
+# CSS MAP
+
+01-base.css
+- :root (colors, variables)
+- body / html
+- safe-area (notch)
+- tap/focus fixes
+- toggle-btn / workspace-btn base
+0
+
+---
+
+02-layout.css
+- .topbar
+- .controls / .actions-left / .actions-right
+- .container
+- .summary-grid
+- .toggle (layout only)
+- .period / .table-wrap / .tbl
+- .review layout
+- .fab / .to-top
+- .workspace-switch
+- .mode-switch (size/layout)
+- #controlsToggle (width!)
+1
+
+---
+
+03-components.css
+- .btn / .btn.primary / .btn.danger
+- .workspace-btn (visual)
+- .mode-switch (visual capsule)
+- .top-menu-btn
+- .card
+- .kpi / .kpi-value
+- .toggle-btn (active)
+- .pill / .badge
+- .review-card
+- .period-card
+- .summary-title-btn
+- .period-collapse-btn
+2
+
+---
+
+04-modals.css
+- .modal-backdrop
+- .modal
+- .modal-title / .modal-text
+- .modal-actions
+- .group-picker-modal
+- .pin-lock (PIN screen)
+3
+
+---
+
+05-forms.css
+- .field / input / select
+- .group-row (group layout)
+- #groupPickerBtn
+- #addGroupBtn / rename / delete / archive
+- .tbl input
+- .review-search-input
+- .edit-actions / .review-actions
+4
+
+---
+
+06-responsive.css
+- @media (mobile)
+- controls responsive
+- buttons stretch
+- review layout mobile
+- group layout mobile
+- extra small devices (420px)
+5
+
+---
+
+07-print.css
+- @media print
+- hide UI (topbar, buttons, etc.)
+- print layout
+- summary / kpi print styles
+- period expanded (no collapse)
+6
+
+---
+
+08-theme.css
+- html[data-theme="dark"]
+- html[data-theme="light"]
+- light theme overrides
+- buttons (light)
+- cards (light)
+- inputs (light)
+- mode-switch (light)
+- workspace-switch (light)
+- top-menu (light)
+- controlsToggle (light)
+7
+
+---
+
+09-effects.css
+- collapse animations
+- .total-flash
+- splash screen
+- loader
+- boot animation
+- transition control
+8
