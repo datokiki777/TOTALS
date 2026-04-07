@@ -528,11 +528,93 @@ async function handleImportExcelChange(e) {
       );
       return;
     }
+    
+    const headerAliases = {
+      group: "Group",
+      groupname: "Group",
+
+      archived: "Archived",
+      archive: "Archived",
+
+      defaultratepercent: "DefaultRatePercent",
+      defaultrate: "DefaultRatePercent",
+      rate: "DefaultRatePercent",
+      percent: "DefaultRatePercent",
+
+      from: "From",
+      datefrom: "From",
+
+      to: "To",
+      dateto: "To",
+
+      client: "Client",
+      customer: "Client",
+      clientname: "Client",
+      name: "Client",
+
+      city: "City",
+      town: "City",
+
+      gross: "Gross",
+      brutto: "Gross",
+
+      net: "Net",
+      netto: "Net",
+
+      status: "Status",
+      done: "Status"
+    };
+
+    const normalizeHeaderKey = (key) =>
+      String(key || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_\-()%€]+/g, "");
+
+    const normalizedRows = rows.map((row) => {
+      const out = {};
+
+      Object.keys(row || {}).forEach((key) => {
+        const normalizedKey = normalizeHeaderKey(key);
+        const canonicalKey = headerAliases[normalizedKey];
+
+        if (canonicalKey) {
+          out[canonicalKey] = row[key];
+        }
+      });
+
+      return {
+        Group: out.Group ?? "",
+        Archived: out.Archived ?? "",
+        DefaultRatePercent: out.DefaultRatePercent ?? "",
+        From: out.From ?? "",
+        To: out.To ?? "",
+        Client: out.Client ?? "",
+        City: out.City ?? "",
+        Gross: out.Gross ?? "",
+        Net: out.Net ?? "",
+        Status: out.Status ?? ""
+      };
+    });
+
+    const requiredColumns = ["Group", "From", "To", "Client", "Gross", "Net"];
+    const hasAnyValidColumn = normalizedRows.some((row) =>
+      requiredColumns.some((col) => String(row[col] ?? "").trim() !== "")
+    );
+
+    if (!hasAnyValidColumn) {
+      await askConfirm(
+        "Excel import failed: required columns were not recognized.",
+        "Import Excel",
+        { singleButton: true, okText: "OK" }
+      );
+      return;
+    }
 
     const groupMap = new Map();
     const rateConflicts = [];
 
-    rows.forEach((row) => {
+    normalizedRows.forEach((row) => {
       const rawGroupName = String(row.Group || "").trim() || "Group";
       const isArchived =
         String(row.Archived || "").trim().toLowerCase() === "yes" ||

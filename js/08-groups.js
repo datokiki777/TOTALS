@@ -207,26 +207,54 @@ function cloneAndReIdGroup(group) {
 }
 
 /* =========================
-   Helper: Archive Group Button Action
+   Merge App State (for JSON import)
 ========================= */
 
-function setupArchiveGroupButton() {
-  const archiveBtn = document.getElementById("archiveGroupBtn");
-  if (!archiveBtn) return;
+function mergeAppState(incomingState) {
+  const incoming = normalizeAppState(incomingState);
 
-  archiveBtn.addEventListener("click", () => {
-    const g = appState.groups.find(x => x.id === appState.activeGroupId) || activeGroup();
-    if (!g) return;
-    const label = g.archived ? "Unarchive" : "Archive";
-    askConfirm(
-      `${label} group "${g.name}"?`,
-      `${label} Group`,
-      { type: "primary", okText: label }
-    ).then((ok) => {
-      if (!ok) return;
-      toggleArchiveGroup(g.id);
-      render();
-      if (appState.uiMode === "review") renderReview();
+  if (!incoming?.groups?.length) return;
+
+  incoming.groups.forEach((incomingGroup) => {
+    const existing = appState.groups.find((g) => {
+      const sameName =
+        (g?.name ?? "").toString().trim().toLowerCase() ===
+        (incomingGroup?.name ?? "").toString().trim().toLowerCase();
+
+      const sameArchive = (g?.archived === true) === (incomingGroup?.archived === true);
+
+      return sameName && sameArchive;
     });
+
+    if (!existing) {
+      const cloned = cloneAndReIdGroup(incomingGroup);
+      cloned.archived = incomingGroup.archived === true;
+      appState.groups.push(cloned);
+      return;
+    }
+
+    const incomingPeriods = normalizeGroupData(incomingGroup.data).periods;
+
+    incomingPeriods.forEach((incomingPeriod) => {
+      const clonedPeriod = {
+        ...incomingPeriod,
+        id: uuid(),
+        rows: (incomingPeriod.rows || []).map((row) => ({
+          ...row,
+          id: uuid(),
+        })),
+      };
+
+      existing.data.periods.push(clonedPeriod);
+    });
+
+    const incomingRate = clampRate(
+      incomingGroup?.data?.defaultRatePercent ?? existing.data.defaultRatePercent
+    );
+
+    existing.data.defaultRatePercent = incomingRate;
   });
+
+  appState = normalizeAppState(appState);
 }
+

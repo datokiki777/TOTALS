@@ -601,4 +601,5 @@ function renderReview() {
 
   reviewView.innerHTML = fullHtml;
   initReviewSearch();
+  refreshSearchIndex();
 }
