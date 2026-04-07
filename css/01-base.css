@@ -1,0 +1,117 @@
+/* =========================================================
+   FILE: 01-base.css
+   Description: Base, root variables, safe-area, tap/focus fixes
+========================================================= */
+
+:root{
+  --bg:#0b1220;
+  --card:#101a2f;
+  --text:#e7eefc;
+  --muted:#9db0d6;
+  --line:rgba(255,255,255,.10);
+  --accent:#5dd4ff;
+  --ok:#34d399;
+  --danger:#ff5d5d;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --radius:16px;
+}
+
+*{ box-sizing:border-box; }
+
+html, body{
+  margin:0;
+  min-height:100%;
+}
+
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgba(93,212,255,.20), transparent 50%),
+    radial-gradient(900px 700px at 90% 0%, rgba(52,211,153,.16), transparent 55%),
+    var(--bg);
+  color:var(--text);
+}
+
+/* =========================================================
+   Part 2: Footer + Hint (hidden)
+========================================================= */
+
+.footer{ display:none; }
+.hint{ display:none !important; }
+
+/* =========================================================
+   Part 3: TWA / Notch blend fix + safe areas
+========================================================= */
+
+html,
+body{
+  min-height:100%;
+}
+
+body{
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* =========================================================
+   Part 4: Tap / Focus fix (buttons & collapse blocks)
+========================================================= */
+
+.btn,
+.summary-title-btn,
+.period-collapse-btn,
+.period-card summary{
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  outline: none;
+}
+
+.btn:focus,
+.btn:focus-visible,
+.summary-title-btn:focus,
+.summary-title-btn:focus-visible,
+.period-collapse-btn:focus,
+.period-collapse-btn:focus-visible,
+.period-card summary:focus,
+.period-card summary:focus-visible{
+  outline: none;
+  box-shadow: none;
+}
+
+/* =========================================================
+   Part 5: Toggle buttons + Workspace buttons
+========================================================= */
+
+.toggle-btn{
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  outline: none;
+  touch-action: manipulation;
+}
+
+.workspace-btn{
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-appearance: none;
+  appearance: none;
+  user-select: none;
+  transform: translateZ(0);
+}
+
+.workspace-btn:focus,
+.workspace-btn:focus-visible,
+.workspace-btn:active{
+  outline: none;
+  box-shadow: none;
+}
+
+.toggle-btn:focus,
+.toggle-btn:focus-visible,
+.toggle-btn:active{
+  outline: none;
+  box-shadow: none;
+}

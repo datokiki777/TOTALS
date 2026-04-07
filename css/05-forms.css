@@ -1,0 +1,139 @@
+/* =========================================================
+   FILE: 05-forms.css
+   Description: Fields, Inputs, Selects, Group form controls,
+                Table inputs, Search inputs, Edit/Review actions
+========================================================= */
+
+/* =========================================================
+   1) Fields + Inputs
+========================================================= */
+
+.field{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.field span{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.field input,
+.select{
+  height:38px;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.06);
+  color:var(--text);
+  outline:none;
+}
+
+.field input:focus,
+.select:focus{
+  border-color:rgba(93,212,255,.65);
+}
+
+.select{ min-width:180px; }
+
+/* =========================================================
+   2) Group Field Controls
+========================================================= */
+
+.group-field .group-row{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "picker add rename"
+    "picker archive delete";
+  gap:6px 8px;
+  align-items:start;
+}
+
+#groupPickerBtn{
+  grid-area: picker;
+  min-width:0;
+  width:100%;
+}
+
+.group-side-actions{
+  display:contents;
+}
+
+#addGroupBtn{
+  grid-area: add;
+  min-width:96px;
+}
+
+#renameGroupBtn{
+  grid-area: rename;
+  min-width:96px;
+}
+
+#archiveGroupBtn{
+  grid-area: archive;
+  min-width:56px;
+}
+
+#deleteGroupBtn{
+  grid-area: delete;
+  min-width:96px;
+}
+
+/* =========================================================
+   3) Table Inputs
+========================================================= */
+
+.tbl td input{
+  width:100%;
+  height:36px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.05);
+  color:var(--text);
+  padding:8px 10px;
+  outline:none;
+}
+
+.tbl td input:focus{
+  border-color:rgba(93,212,255,.65);
+}
+
+/* =========================================================
+   4) Search Input
+========================================================= */
+
+.review-search-input{
+  height:40px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.06);
+  color:var(--text);
+  outline:none;
+}
+
+.review-search-input:focus{
+  border-color:rgba(93,212,255,.65);
+}
+
+/* =========================================================
+   5) Text Prompt Input (modal)
+========================================================= */
+
+#textPromptInput{
+  width:100%;
+}
+
+/* =========================================================
+   6) Edit / Review Actions Layout
+========================================================= */
+
+.edit-actions, .review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
