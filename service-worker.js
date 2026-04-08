@@ -1,11 +1,33 @@
-const CACHE = "client-totals-shell-v2.5";
+const CACHE = "client-totals-shell-v2.6";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
-  "./app.js",
-  "./style.css",
-  "./manifest.json"
+  "./manifest.json",
+
+  "./css/01-base.css",
+  "./css/02-layout.css",
+  "./css/03-components.css",
+  "./css/04-modals.css",
+  "./css/05-forms.css",
+  "./css/06-responsive.css",
+  "./css/07-print.css",
+  "./css/08-theme.css",
+  "./css/09-effects.css",
+
+  "./js/01-config.js",
+  "./js/02-dom.js",
+  "./js/03-utils.js",
+  "./js/04-state.js",
+  "./js/05-storage.js",
+  "./js/06-render.js",
+  "./js/07-modals.js",
+  "./js/08-groups.js",
+  "./js/09-periods.js",
+  "./js/10-search.js",
+  "./js/11-import-export.js",
+  "./js/12-theme.js",
+  "./js/13-app.js"
 ];
 
 // install
@@ -36,8 +58,8 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(req.url);
 
-  // მხოლოდ იგივე origin-ზე ვმუშაობთ
-  if (url.origin !== location.origin) return;
+  // მხოლოდ იგივე origin
+  if (url.origin !== self.location.origin) return;
 
   // HTML / navigation -> network first
   if (
@@ -60,36 +82,35 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // CSS / JS / manifest -> network first
-if (
-  url.pathname.endsWith(".css") ||
-  url.pathname.endsWith(".js") ||
-  url.pathname.endsWith(".json") ||
-  url.pathname.endsWith(".webmanifest")
-) {
-  event.respondWith(
-    fetch(req)
-      .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((cache) => cache.put(req, copy));
-        return res;
-      })
-      .catch(() => caches.match(req))
-  );
-  return;
-}
-
-  // others -> cache first
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      return (
-        cached ||
-        fetch(req).then((res) => {
+  // CSS / JS / manifest / json -> network first
+  if (
+    url.pathname.endsWith(".css") ||
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".json") ||
+    url.pathname.endsWith(".webmanifest")
+  ) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((cache) => cache.put(req, copy));
           return res;
         })
-      );
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // დანარჩენი same-origin ფაილები -> cache first
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((cache) => cache.put(req, copy));
+        return res;
+      });
     })
   );
 });
