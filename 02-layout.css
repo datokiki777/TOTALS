@@ -1,0 +1,1004 @@
+/* =========================================================
+   FILE: 02-layout.css
+   Description: Layout & positioning (Topbar, Grids, Containers,
+                Workspace, Modals positioning, Periods, Search,
+                Storage, Update/Install bars, Overview etc.)
+   UPDATED: top-menu-btn size reduced (38x38)
+========================================================= */
+
+/* =========================================================
+   1) Topbar (cleaned & compact)
+========================================================= */
+
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:999;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:10px 14px 8px;
+  border-bottom:1px solid var(--line);
+  background:rgba(11,18,32,.85);
+  backdrop-filter:blur(10px);
+}
+
+/* Safe area / notch fix */
+.topbar{
+  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  margin-top: calc(env(safe-area-inset-top, 0px) * -1);
+}
+
+/* =========================================================
+   2) Controls layout
+========================================================= */
+
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:flex-start;
+  justify-content:space-between;
+  overflow:visible;
+  max-height:1200px;
+  opacity:1;
+}
+
+.actions-left{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  gap:6px;
+  align-items:start;
+  width:100%;
+}
+
+.actions-right{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:flex-end;
+}
+
+.btn-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:flex-end;
+}
+
+.backup-row{ opacity:.95; }
+
+/* =========================================================
+   3) Container
+========================================================= */
+
+.container{
+  max-width:1100px;
+  margin:18px auto;
+  padding:0 14px 40px;
+}
+
+/* =========================================================
+   4) Summary layout
+========================================================= */
+
+.summary-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+/* =========================================================
+   5) Toggle layout (toggle-btn styles go to components)
+========================================================= */
+
+.toggle{
+  display:flex;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.04);
+  border-radius:999px;
+  padding:4px;
+  gap:4px;
+}
+
+/* =========================================================
+   6) Period cards + table layout
+========================================================= */
+
+.period{ margin-top:14px; }
+
+.period-head{
+  display:flex;
+  gap:12px;
+  justify-content:space-between;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+
+.period-title h2{
+  margin:0;
+  font-size:16px;
+}
+
+.period-dates{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.period-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:flex-start;
+}
+
+.table-wrap{
+  margin-top:12px;
+  overflow:auto;
+  border-radius:14px;
+  border:1px solid var(--line);
+}
+
+.tbl{
+  width:100%;
+  border-collapse:collapse;
+  min-width:860px;
+  background:rgba(0,0,0,.10);
+}
+
+.tbl th,
+.tbl td{
+  border-bottom:1px solid var(--line);
+  padding:10px;
+  text-align:left;
+}
+
+.tbl th{
+  font-size:12px;
+  color:var(--muted);
+  background:rgba(255,255,255,.04);
+  position:sticky;
+  top:0;
+}
+
+.total-row td{
+  background:linear-gradient(
+    90deg,
+    rgba(34,197,94,.30),
+    rgba(16,185,129,.24)
+  );
+  border:1px solid rgba(34,197,94,.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 6px 18px rgba(16,185,129,.18);
+  font-weight:900;
+  border-bottom:none;
+  letter-spacing:.3px;
+}
+
+.total-label{ letter-spacing:.4px; }
+
+/* =========================================================
+   7) Review mode layout
+========================================================= */
+
+#reviewView{
+  margin-top:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.review-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.review-kpis{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:12px;
+}
+
+.period-body{
+  padding:0 14px 14px 14px;
+}
+
+.client-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:10px;
+}
+
+.client-item{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.04);
+  border-radius:14px;
+  padding:10px 12px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.client-values{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  color:var(--text);
+  font-size:12px;
+}
+
+.client-values span{ color:var(--muted); }
+
+/* =========================================================
+   8) To-top / FAB positioning
+========================================================= */
+
+.to-top{
+  position:fixed;
+  right:16px;
+  bottom:140px;
+  width:46px;
+  height:46px;
+  border:0;
+  border-radius:14px;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  font-size:20px;
+  opacity:0;
+  transform:translateY(10px);
+  pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;
+  background:rgba(255,255,255,0.10);
+  color:rgba(255,255,255,0.92);
+  box-shadow:0 10px 30px rgba(0,0,0,0.35);
+  backdrop-filter:blur(10px);
+  z-index:5000;
+}
+
+.to-top.show{
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+
+.fab-add-client{
+  position:fixed;
+  right:16px;
+  bottom:72px;
+  z-index:5000;
+  padding:12px 14px;
+  border-radius:999px;
+  font-weight:700;
+  display:none;
+}
+
+html.is-edit .fab-add-client{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+
+html.keyboard-open .fab-add-client{
+  bottom:90px;
+}
+
+html.all-periods-collapsed .fab-add-client{
+  display:none !important;
+}
+
+/* =========================================================
+   9) Search layout
+========================================================= */
+
+.review-search{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.review-search-results{
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+
+.review-search-item{
+  padding:10px 12px;
+  border-bottom:1px solid var(--line);
+}
+
+.review-search-empty{
+  padding:10px 12px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+/* =========================================================
+   10) Workspace switch layout (compacted)
+========================================================= */
+
+.workspace-bar{
+  display:flex;
+  justify-content:center;
+  width:100%;
+}
+
+.workspace-switch{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  width:min(100%, 320px);
+  padding:2px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.04);
+  border-radius:999px;
+  box-shadow:var(--shadow);
+}
+
+.workspace-switch-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  width:min(100%, 420px);
+}
+
+.workspace-btn{
+  flex:1 1 0;
+  border-radius:999px;
+  padding:4px 10px;
+  min-height:30px;
+}
+
+/* =========================================================
+   10.5) Top menu button (UPDATED - smaller 38x38)
+========================================================= */
+
+.top-menu-btn{
+  width:38px;
+  height:38px;
+  flex:0 0 38px;
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+
+.top-menu-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  background:rgba(0,0,0,.28);
+}
+
+.top-menu-panel{
+  position:absolute;
+  top:78px;
+  right:14px;
+  width:min(260px, calc(100vw - 28px));
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:10px;
+  border-radius:18px;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(16,26,47,.98), rgba(11,18,32,.98));
+  box-shadow:0 18px 40px rgba(0,0,0,.40);
+  backdrop-filter:blur(12px);
+}
+
+.top-menu-file{
+  display:flex;
+  align-items:center;
+}
+
+/* =========================================================
+   11) Mode/theme bar layout (cleaned & compact)
+========================================================= */
+
+.mode-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  width:100%;
+}
+
+.mode-switch{
+  display:inline-flex;
+  align-items:center;
+  gap:1px;
+  padding:2px;
+  border-radius:999px;
+  width:auto;
+  flex:0 0 auto;
+  align-self:flex-start;
+}
+
+.mode-switch .btn{
+  min-width:60px;
+  height:28px;
+  padding:0 10px;
+  border-radius:999px;
+}
+
+#controlsToggle{
+  margin:0;
+  flex-shrink:0;
+  width:130px;
+  min-width:130px;
+  max-width:130px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-align:center;
+  background:rgba(168,85,247,.16);
+  border-color:rgba(168,85,247,.35);
+  color:#e9d5ff;
+}
+
+.theme-switch{
+  margin-left:0;
+  flex-shrink:0;
+  position:relative;
+  width:54px;
+  height:28px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  user-select:none;
+}
+
+.theme-switch input{ display:none; }
+
+.theme-switch .slider{
+  position:absolute;
+  inset:0;
+  border-radius:999px;
+  background:rgba(255,255,255,0.10);
+  border:1px solid rgba(255,255,255,0.18);
+  backdrop-filter:blur(10px);
+  transition:background .2s ease, border-color .2s ease;
+  z-index:1;
+}
+
+.theme-switch .slider::before{
+  content:"";
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  background:#ffffff;
+  transition:transform .2s ease;
+}
+
+.theme-switch input:checked + .slider::before{
+  transform:translateX(26px);
+}
+
+.theme-switch .icon{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:14px;
+  opacity:.9;
+  pointer-events:none;
+  z-index:2;
+}
+
+.theme-switch .moon{ left:7px; }
+.theme-switch .sun{ right:7px; }
+
+/* =========================================================
+   12) Summary collapse + monthly layout
+========================================================= */
+
+.summary-body{
+  margin-top:12px;
+  overflow:hidden;
+  max-height:1200px;
+  opacity:1;
+}
+
+.overview-date-box{
+  margin-top:14px;
+  padding:12px 14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.overview-date-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.overview-date-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.2px;
+}
+
+.overview-date-value{
+  font-size:14px;
+  font-weight:800;
+  color:var(--text);
+  letter-spacing:.2px;
+}
+
+.monthly-stats{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+
+.monthly-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.monthly-title{
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.3px;
+  color:var(--text);
+}
+
+.month-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.month-label{
+  min-width:120px;
+  text-align:center;
+  font-weight:800;
+  color:var(--text);
+}
+
+.monthly-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+.month-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 18px;
+  border-radius:16px;
+  margin-bottom:0;
+  font-size:15px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+  gap:10px;
+}
+
+.month-row span{
+  opacity:.75;
+  font-weight:500;
+}
+
+.month-row b{
+  font-size:18px;
+  font-weight:700;
+}
+
+.month-badges{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+/* =========================================================
+   13) Period collapse layout
+========================================================= */
+
+.period-top{
+  margin-bottom:12px;
+}
+
+.period-body-wrap{
+  overflow:hidden;
+  max-height:2500px;
+  opacity:1;
+}
+
+.period-group-box{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.05);
+  color:var(--accent);
+  font-size:12px;
+  font-weight:700;
+  margin:8px 0 2px 0;
+  width:fit-content;
+}
+
+/* =========================================================
+   14) Status list layout
+========================================================= */
+
+.status-list-body{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:10px;
+  max-height:55vh;
+  overflow:auto;
+}
+
+.status-list-item{
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.05);
+  border-radius:14px;
+  padding:10px 12px;
+  cursor:pointer;
+  transition: transform .14s ease, filter .14s ease, border-color .14s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.status-list-name{
+  font-weight:900;
+  font-size:13px;
+}
+
+.status-list-meta{
+  margin-top:6px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.status-list-empty{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.4;
+}
+
+/* =========================================================
+   15) Premium / Global search layout
+========================================================= */
+
+.premium-status-row{
+  margin-top: 18px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background:
+    linear-gradient(135deg,
+      rgba(20,34,58,.92) 0%,
+      rgba(28,52,86,.88) 52%,
+      rgba(16,30,52,.92) 100%);
+  border: 1px solid rgba(120,190,255,.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(255,255,255,.02),
+    0 10px 26px rgba(0,0,0,.22),
+    0 0 0 1px rgba(120,190,255,.06),
+    0 0 28px rgba(70,150,255,.10);
+}
+
+.premium-status-row > span{
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  color: #eef4ff;
+  text-shadow: 0 1px 8px rgba(0,0,0,.22);
+}
+
+.premium-status-row .month-badges{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.global-search-card{
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.global-search-card .review-head{
+  display:block;
+}
+
+.global-search-card .review-search{
+  width:100%;
+}
+
+.global-search-card .review-search-results{
+  margin-top: 14px;
+  position: static;
+  max-height: 340px;
+  overflow: auto;
+  border-radius: 22px;
+}
+
+.global-search-card .review-search-item{
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  margin-bottom: 10px;
+}
+
+.global-search-card .review-search-name{
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  color: #0f172a;
+}
+
+.global-search-card .review-search-meta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.global-search-card .review-search-meta span{
+  color: #64748b;
+}
+
+.global-search-card .review-search-meta b{
+  color: #475569;
+  font-weight: 800;
+}
+
+.review-search-name-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+  flex-wrap:wrap;
+}
+
+/* =========================================================
+   16) Storage indicator layout
+========================================================= */
+
+.storage-box{
+  margin-top:8px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.04);
+}
+
+.storage-title{
+  font-size:12px;
+  font-weight:800;
+  margin-bottom:6px;
+  color:var(--muted);
+}
+
+.storage-bar{
+  width:100%;
+  height:8px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(255,255,255,.08);
+}
+
+#storageBarFill{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:#34d399;
+  transition:width .25s ease;
+}
+
+.storage-text{
+  margin-top:6px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--text);
+}
+
+/* =========================================================
+   17) Install / Update popup layout
+========================================================= */
+
+#updateBar{
+  position: fixed !important;
+  left: 16px !important;
+  right: 16px !important;
+  bottom: 20px !important;
+  width: auto !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  padding: 16px !important;
+  border-radius: 18px !important;
+  display: none;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 14px !important;
+  z-index: 9999 !important;
+  box-sizing: border-box !important;
+}
+
+#updateBar .update-copy{
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+#updateBar .update-title{
+  font-size: 28px !important;
+  line-height: 1.05 !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+}
+
+#updateBar .update-text{
+  font-size: 16px !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+
+#updateBar .update-actions{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+#updateBar .update-actions .btn{
+  width: 100% !important;
+  min-width: 0 !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 12px 10px !important;
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+  border-radius: 14px !important;
+}
+
+#installBar{
+  position: fixed !important;
+  left: 16px !important;
+  right: 16px !important;
+  bottom: 20px !important;
+  width: auto !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+  padding: 16px !important;
+  border-radius: 18px !important;
+  display: none;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 14px !important;
+  z-index: 9999 !important;
+  box-sizing: border-box !important;
+}
+
+#installBar .install-copy{
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+#installBar .install-title{
+  font-size: 28px !important;
+  line-height: 1.05 !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+}
+
+#installBar .install-text{
+  font-size: 16px !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+
+#installBar .install-actions{
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+#installBar .install-actions .btn{
+  width: 100% !important;
+  min-width: 0 !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 12px 10px !important;
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+  border-radius: 14px !important;
+}
+
+/* =========================================================
+   18) Overview grid version (new)
+========================================================= */
+
+.overview-date-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 10px;
+}
+
+.overview-date-label {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.overview-date-value {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.overview-duration {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.15;
+  color: var(--text);
+  opacity: 0.95;
+  min-width: 38px;
+}
+
+.overview-duration span {
+  letter-spacing: 0.2px;
+}
