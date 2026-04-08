@@ -69,3 +69,7 @@
 13-app.js
 - initApp()
 - startApp()
+
+14-debug.js
+- runAppDebugChecks() → სრული state validation
+- runQuickDebug() → მოკლე შედეგი
