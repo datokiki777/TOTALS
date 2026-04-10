@@ -124,8 +124,14 @@ async function setMode(mode) {
     }
   }
 
-  // REFACTORED: use centralized UI sync
+  // mode switch = structural change
   await refreshFullUiState();
+
+  if (appState.uiMode === "edit") {
+    render();
+  } else {
+    renderReview();
+  }
 }
 
 async function shiftMonthCursor(dir) {
