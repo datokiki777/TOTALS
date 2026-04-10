@@ -184,7 +184,10 @@ COLLAPSE:
 
 WORKSPACE & MODE:
 - setWorkspaceMode(), updateWorkspaceSwitchUI()
-- setMode() - async, uses refreshFullUiState()
+- setMode() - async
+  → mode switch uses refreshFullUiState()
+  → forces render() in Edit mode
+  → forces renderReview() in Review mode
 - shiftMonthCursor() - async, uses renderMonthlySection()
 - updateGrandToggleUI(), setControlsForMode()
 - initWorkspaceSwitch()
