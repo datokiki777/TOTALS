@@ -47,6 +47,8 @@
 - appState (initialized via initAppState)
 - getAppState(), setAppState()
 - activeGroup(), getGroupsByMode()
+- isReviewGroupCollapsed(), toggleReviewGroupCollapsed()
+  → Review group cards default collapsed / expandable state
   → All mode: current group first, then newest groups below
 - defaultAppState(), normalizeAppState(), normalizeGroupData()
 - emptyRow(), defaultGroupData()
@@ -203,6 +205,10 @@ WORKSPACE & MODE:
 32-render-review.js
 ═══════════════════════════════════════
 - renderReview() - FULL REVIEW VIEW RENDER
+- renderReview() - FULL REVIEW VIEW RENDER
+  → Review group cards are collapsible
+  → Default state = collapsed
+  → Expanded state shows KPI cards + period cards
 
 ═══════════════════════════════════════
 33-render-monthly.js
@@ -262,6 +268,7 @@ GLOBAL EVENT LISTENERS:
 - Default rate input
 - Add period / reset group buttons
 - Scroll to top, floating add client
+- Review group collapse toggle
 - Status list modal close
 - Keyboard detection, back button (popstate)
 

@@ -39,6 +39,13 @@
 - .period-card
 - .summary-title-btn
 - .period-collapse-btn
+- .review-group-toggle
+- .review-head-collapsible / .review-head-main / .review-head-side
+- .review-group-body
+- .review-card.is-collapsed
+- .review-group-toggle (+ tap/focus highlight disabled)
+- .review-group-toggle (:active press effect, scale + background)
+- .review-group-toggle (tap highlight disabled, enhanced press effect)
 2
 
 ---
