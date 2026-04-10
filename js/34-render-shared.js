@@ -35,37 +35,29 @@ function updateControlsButtonLabel() {
   }
 
   let name = group.name.trim();
-
   name = name.split(" ")[0];
-
   const MAX = 8;
   if (name.length > MAX) {
     name = name.slice(0, MAX);
   }
-
   btn.textContent = `👤 ${name}`;
 }
 
 function renderGroupSelect() {
   if (!groupPickerBtn || !groupPickerBtnText) return;
-
   const g = activeGroup();
-
   if (!g) {
     groupPickerBtnText.textContent = "Select group";
     return;
   }
-
   groupPickerBtnText.textContent = g.archived ? `📦 ${g.name}` : g.name;
 }
 
 function updateFloatingAddClientVisibility() {
   if (!fabAddClient) return;
-
   const isEdit = appState.uiMode === "edit";
   const g = activeGroup();
   const hasPeriods = !!g?.data?.periods?.length;
-
   fabAddClient.hidden = !(isEdit && hasPeriods);
   fabAddClient.style.display = isEdit && hasPeriods ? "" : "none";
 }
@@ -77,14 +69,11 @@ function getDigitsOnly(value) {
 function isSuspiciousNetComparedToGross(grossValue, netValue) {
   const grossDigits = getDigitsOnly(grossValue);
   const netDigits = getDigitsOnly(netValue);
-
   if (!grossDigits || !netDigits) return false;
-
   return grossDigits.length === netDigits.length + 1;
 }
 
 // ========== MISSING FUNCTIONS (for bind-events and render) ==========
-
 function updateGrandToggleUI() {
   if (!totalsActiveBtn || !totalsAllBtn) return;
   const isActive = appState.grandMode === "active";

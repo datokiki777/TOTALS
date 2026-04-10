@@ -37,7 +37,6 @@ async function updateAfterRowChange(periodId) {
 }
 
 async function updateAfterPeriodMetaChange(periodId) {
-  // Update period preview in collapse button
   const periodSection = document.querySelector(`.period[data-period-id="${periodId}"]`);
   if (periodSection) {
     const collapseMeta = periodSection.querySelector(".period-range-preview");
@@ -46,31 +45,23 @@ async function updateAfterPeriodMetaChange(periodId) {
       collapseMeta.textContent = formatPeriodPreview(p.from, p.to);
     }
   }
-  
   renderGrandTotals();
   await renderMonthlySection();
   renderOverviewSection();
-  
   if (appState.uiMode === "review") renderReview();
 }
 
 async function updateAfterStatusChange(periodId) {
   await renderMonthlySection();
   renderOverviewSection();
-
-  if (appState.uiMode === "review") {
-    renderReview();
-  }
+  if (appState.uiMode === "review") renderReview();
 }
 
 async function updateAfterGlobalChange() {
   renderGrandTotals();
   await renderMonthlySection();
   renderOverviewSection();
-  
-  if (appState.uiMode === "review") {
-    renderReview();
-  }
+  if (appState.uiMode === "review") renderReview();
 }
 
 async function recalcAndRenderTotals() {

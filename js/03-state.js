@@ -120,8 +120,19 @@ function getGroupsByMode(mode = null) {
     state.workspaceMode === "archive" ? g.archived === true : g.archived !== true
   );
   if (effectiveMode === "active") {
-    const current = activeGroup();
-    return current ? [current] : [];
-  }
-  return workspaceGroups;
+  const current = activeGroup();
+  return current ? [current] : [];
+}
+
+// 👉 All რეჟიმი — დავალაგოთ
+const current = activeGroup();
+
+// დანარჩენი ჯგუფები (current-ის გარეშე)
+const others = workspaceGroups.filter(g => g.id !== current?.id);
+
+// უახლესი ზემოთ (ბოლოს დამატებული)
+others.reverse();
+
+// საბოლოო სია
+return current ? [current, ...others] : others;
 }

@@ -70,9 +70,16 @@ async function setWorkspaceMode(mode) {
   if (appState.uiMode === "edit") appState.grandMode = "active";
   else appState.grandMode = appState.lastReviewGrandMode === "all" ? "all" : "active";
   await saveState();
-  updateWorkspaceSwitchUI();
-  render();
-  if (appState.uiMode === "review") renderReview();
+
+  // REFACTORED: use refreshFullUiState
+  if (appState.uiMode === "edit") {
+    render();
+    await refreshFullUiState();
+  } else {
+    if (editView) editView.hidden = true;
+    if (reviewView) reviewView.hidden = false;
+    await refreshFullUiState();
+  }
 }
 
 function initWorkspaceSwitch() {
@@ -101,31 +108,24 @@ async function setMode(mode) {
     appState.grandMode = appState.lastReviewGrandMode === "all" ? "all" : "active";
   }
   await saveState();
+
   modeEditBtn?.classList.toggle("active", appState.uiMode === "edit");
   modeReviewBtn?.classList.toggle("active", appState.uiMode === "review");
+
   if (editView && reviewView) {
-  const isEdit = appState.uiMode === "edit";
-  const isReview = appState.uiMode === "review";
+    const isEdit = appState.uiMode === "edit";
+    const isReview = appState.uiMode === "review";
 
-  editView.hidden = !isEdit;
-  reviewView.hidden = !isReview;
+    editView.hidden = !isEdit;
+    reviewView.hidden = !isReview;
 
-  if (isEdit) {
-    reviewView.innerHTML = "";
-  } else {
-    renderReview();
+    if (isEdit) {
+      reviewView.innerHTML = "";
+    }
   }
-}
-  setControlsForMode(appState.uiMode);
-  updateGrandToggleUI();
-  if (appState.uiMode === "edit") {
-  await updateAfterGlobalChange();
-  updateFloatingAddClientVisibility();
-  document.documentElement.classList.toggle("is-edit", appState.uiMode === "edit");
-} else {
-  renderReview();
-}
-  updateFloatingAddClientVisibility();
+
+  // REFACTORED: use centralized UI sync
+  await refreshFullUiState();
 }
 
 async function shiftMonthCursor(dir) {

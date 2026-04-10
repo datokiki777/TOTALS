@@ -46,13 +46,8 @@ async function initApp() {
     // 10. Initialize status badge actions
     initStatusBadgeActions();
     
-    // 11. Set UI mode and render
-    await setMode(appState.uiMode || "review");
-       render();
-
-    if (appState.uiMode === "review") {
-       renderReview();
-    }
+    // 11. Set UI mode
+      await setMode(appState.uiMode || "review");
     
     // 12. Show backup reminder if needed
     setTimeout(async () => {
@@ -66,9 +61,8 @@ async function initApp() {
     
   } catch (error) {
     console.error("App initialization failed:", error);
-    // Fallback: try to use default state
     appState = defaultAppState();
-    render();
+    await setMode(appState.uiMode || "review");
   }
   
   // Remove splash screen after init
@@ -102,59 +96,71 @@ window.addEventListener("load", () => {
 ========================= */
 
 if ("serviceWorker" in navigator) {
+  let userAcceptedUpdate = false;
+
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    // Auto refresh disabled.
-    // New version will be applied only when user manually refreshes
-    // or when your update button logic chooses to reload.
-    console.log("Service worker controller changed. Auto reload is disabled.");
+    if (userAcceptedUpdate) {
+      window.location.reload();
+    }
   });
 
-  navigator.serviceWorker.register("service-worker.js").then((reg) => {
-    const showUpdateBar = (worker) => {
-      const bar = document.getElementById("updateBar");
-      const btn = document.getElementById("updateBtn");
-      const exportBtn = document.getElementById("updateExportBtn");
+  navigator.serviceWorker
+    .register("./service-worker.js")
+    .then((reg) => {
+      const showUpdateBar = (worker) => {
+        const bar = document.getElementById("updateBar");
+        const btn = document.getElementById("updateBtn");
+        const exportBtn = document.getElementById("updateExportBtn");
 
-      if (bar) bar.style.display = "flex";
+        if (bar) bar.style.display = "flex";
 
-      if (exportBtn) {
-        exportBtn.onclick = () => {
-          handleExportJson();
-        };
-      }
-
-      if (btn) {
-        btn.onclick = () => {
-          btn.disabled = true;
-          btn.textContent = "Updating...";
-
-          if (worker) {
-            worker.postMessage({ action: "skipWaiting" });
-          } else {
-            window.location.reload();
-          }
-        };
-      }
-    };
-
-    if (reg.waiting) {
-      showUpdateBar(reg.waiting);
-    }
-
-    reg.addEventListener("updatefound", () => {
-      const newWorker = reg.installing;
-      if (!newWorker) return;
-
-      newWorker.addEventListener("statechange", () => {
-        if (
-          newWorker.state === "installed" &&
-          navigator.serviceWorker.controller
-        ) {
-          showUpdateBar(newWorker);
+        if (exportBtn) {
+          exportBtn.onclick = () => {
+            handleExportJson();
+          };
         }
+
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Update";
+
+          btn.onclick = () => {
+            if (!worker) {
+              if (bar) bar.style.display = "none";
+              window.location.reload();
+              return;
+            }
+
+            userAcceptedUpdate = true;
+            btn.disabled = true;
+            btn.textContent = "Updating...";
+            if (bar) bar.style.display = "none";
+            worker.postMessage({ action: "skipWaiting" });
+          };
+        }
+      };
+
+      if (reg.waiting) {
+        showUpdateBar(reg.waiting);
+      }
+
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+
+        newWorker.addEventListener("statechange", () => {
+          if (
+            newWorker.state === "installed" &&
+            navigator.serviceWorker.controller
+          ) {
+            showUpdateBar(reg.waiting || newWorker);
+          }
+        });
       });
+    })
+    .catch((error) => {
+      console.error("Service worker registration failed:", error);
     });
-  }).catch(console.error);
 }
 
 /* =========================
