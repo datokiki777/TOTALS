@@ -18,14 +18,13 @@ function renderOverviewDateRange() {
     if (min && max) {
       const { months, days } = getDurationMonthsDays(min, max);
 
-      overviewDurationEl.innerHTML = `
-        <span class="dur-clients">${clientsCount} Cl</span>
-        <span class="dur-months">${months} m</span>
-        <span class="dur-days">${days} d</span>
+     overviewDurationEl.innerHTML = `
+        <span class="dur-clients">${clientsCount} Clients</span>
+        <span class="dur-months">${months} Mo ${days} D</span>
       `;
     } else {
       overviewDurationEl.innerHTML = `
-        <span class="dur-clients">${clientsCount} Cl</span>
+        <span class="dur-clients">${clientsCount} Clients</span>
         <span class="dur-months">—</span>
         <span class="dur-days">—</span>
       `;
