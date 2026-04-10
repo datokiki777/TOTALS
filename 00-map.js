@@ -47,8 +47,13 @@
 - appState (initialized via initAppState)
 - getAppState(), setAppState()
 - activeGroup(), getGroupsByMode()
+  → All mode: current group first, then newest groups below
 - defaultAppState(), normalizeAppState(), normalizeGroupData()
 - emptyRow(), defaultGroupData()
+- isDefaultEmptyGroup(g)
+- cleanupDefaultGroup()
+  → removes empty default template group when real groups exist
+  → auto-switches activeGroup if needed
 - initAppState() - async loader
 
 ═══════════════════════════════════════
@@ -108,9 +113,11 @@
 20-actions-groups.js
 ═══════════════════════════════════════
 - addGroup(), renameGroup(), deleteGroup()
+  → addGroup() calls cleanupDefaultGroup()
 - toggleArchiveGroup(), switchGroup()
 - findGroupByName(), cloneAndReIdGroup()
 - mergeAppState(), isSameMergeRow(), normalizeMergeText()
+  → mergeAppState() calls cleanupDefaultGroup()
 
 ═══════════════════════════════════════
 21-actions-periods.js
@@ -156,7 +163,9 @@
 16-import-export.js (renamed from 11-import-export.js)
 ═══════════════════════════════════════
 - handleExportJson(), handleImportJsonChange()
+  → JSON replace imports call cleanupDefaultGroup()
 - handleExportExcel(), handleImportExcelChange()
+  → Excel replace imports call cleanupDefaultGroup()
 - handleExportPdf(), exportPdfAllGroups()
 - downloadJson(), nowStamp()
 - ⚠️ Storage indicator REMOVED (IndexedDB doesn't need it)
@@ -173,7 +182,7 @@ COLLAPSE:
 
 WORKSPACE & MODE:
 - setWorkspaceMode(), updateWorkspaceSwitchUI()
-- setMode() - async, uses updateAfterGlobalChange()
+- setMode() - async, uses refreshFullUiState()
 - shiftMonthCursor() - async, uses renderMonthlySection()
 - updateGrandToggleUI(), setControlsForMode()
 - initWorkspaceSwitch()
@@ -182,6 +191,8 @@ WORKSPACE & MODE:
 30-render-overview.js
 ═══════════════════════════════════════
 - renderOverviewDateRange(), renderOverviewSection()
+  → Working period + Clients + duration only
+  → overview duration format: "X Clients", "Y Mo Z D"
 
 ═══════════════════════════════════════
 31-render-periods.js
@@ -197,6 +208,10 @@ WORKSPACE & MODE:
 33-render-monthly.js
 ═══════════════════════════════════════
 - renderMonthlyStats(), renderMonthlySection()
+  → month Gross / Net / My stay monthly
+  → Done / Fail / Fixed use FULL status counts:
+    Current = current group full stats
+    All = all groups full stats
 
 ═══════════════════════════════════════
 34-render-shared.js
@@ -265,9 +280,13 @@ APP INITIALIZATION:
   8. initTopMenu()
   9. initPinLockAsync()
   10. initStatusBadgeActions()
-  11. setMode() + render()
+  11. setMode()
 - Splash screen removal
 - Service Worker (PWA)
+  → manual update flow
+  → Export All + Update popup
+  → skipWaiting only after user action
+  → reload only after accepted update
 - beforeinstallprompt / appinstalled
 
 ═══════════════════════════════════════
@@ -287,7 +306,7 @@ ARCHITECTURE RULES:
 STRUCTURAL CHANGE → render() (31-render-periods.js):
 - add/remove row
 - add/remove period
-- switch group
+- switch group / workspace
 - reset group
 - import/replace data
 - mode switch (edit/review)
@@ -299,6 +318,14 @@ DATA CHANGE → granular update (40-update-flow.js):
 - default rate → updateAfterGlobalChange()
 - grand mode toggle → updateAfterGlobalChange()
 - month cursor shift → renderMonthlySection()
+
+UI CHROME SYNC → refreshUiChrome() / refreshFullUiState() (35-ui-sync.js):
+- workspace badges
+- controls button label
+- group selector
+- grand toggle UI
+- fab visibility
+- html.is-edit class
 
 STORAGE:
 - All data stored in IndexedDB (client_totals_db)
