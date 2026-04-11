@@ -15,56 +15,50 @@ async function initApp() {
   try {
     // 1. Open IndexedDB
     await openDb();
-    
-    // 2. Migrate from localStorage if needed
-    const migrated = await migrateFromLocalStorage();
-    if (migrated) {
-      console.log("Migration completed successfully");
-    }
-    
-    // 3. Load app state from IndexedDB
+
+    // 2. Load app state from IndexedDB
     appState = await loadState();
-    
-    // 4. Initialize theme (async)
+
+    // 3. Initialize theme (async)
     await initThemeAsync();
-    
-    // 5. Initialize controls toggle (async)
+
+    // 4. Initialize controls toggle (async)
     await initControlsToggleAsync();
-    
-    // 6. Initialize workspace switch
+
+    // 5. Initialize workspace switch
     initWorkspaceSwitch();
-    
-    // 7. Initialize summary panel
+
+    // 6. Initialize summary panel
     initSummaryPanel();
-    
-    // 8. Initialize top menu
+
+    // 7. Initialize top menu
     initTopMenu();
-    
-    // 9. Initialize PIN lock
+
+    // 8. Initialize PIN lock
     await initPinLockAsync();
-    
-    // 10. Initialize status badge actions
+
+    // 9. Initialize status badge actions
     initStatusBadgeActions();
-    
-    // 11. Set UI mode
-      await setMode(appState.uiMode || "review");
-    
-    // 12. Show backup reminder if needed
+
+    // 10. Set UI mode
+    await setMode(appState.uiMode || "review");
+
+    // 11. Show backup reminder if needed
     setTimeout(async () => {
       const shouldShow = await shouldShowBackupReminder();
       if (shouldShow) {
         showBackupReminderPopup();
       }
     }, 250);
-    
+
     appInitialized = true;
-    
+
   } catch (error) {
     console.error("App initialization failed:", error);
     appState = defaultAppState();
     await setMode(appState.uiMode || "review");
   }
-  
+
   // Remove splash screen after init
   requestAnimationFrame(() => {
     document.body.classList.remove("booting");

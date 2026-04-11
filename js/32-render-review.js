@@ -131,7 +131,7 @@ function renderReview() {
         >
           <div class="review-head review-head-collapsible">
             <div class="review-head-main">
-              <h3 class="review-title">${escapeHtml(g.name)}${g.archived ? ' 📦' : ''} — Review</h3>
+              <h3 class="review-title">${escapeHtml(g.name)}${g.archived ? ' 📦' : ''}</h3>
               <div class="review-sub">${groupTotals.periods} periods • ${groupTotals.clients} rows • Default ${fmt(st.defaultRatePercent)}%</div>
             </div>
 

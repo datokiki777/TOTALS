@@ -1,12 +1,11 @@
 // 04-storage.js
-// Storage functions - IndexedDB management with localStorage migration
+// Storage functions - IndexedDB management
 
 /* =========================
    IndexedDB Core Functions
 ========================= */
 
 let dbInstance = null;
-let migrationCompleted = false;
 
 function openDb() {
   return new Promise((resolve, reject) => {
@@ -62,116 +61,6 @@ async function dbDelete(key) {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
-}
-
-/* =========================
-   Migration from localStorage
-========================= */
-
-async function migrateFromLocalStorage() {
-  if (migrationCompleted) return false;
-  
-  try {
-    // Check if already migrated (check if appState exists in IndexedDB)
-    const existingState = await dbGet(DB_KEY_APP_STATE);
-    if (existingState) {
-      migrationCompleted = true;
-      return false;
-    }
-
-    let migrated = false;
-
-    // Migrate main app state
-    const legacyState = localStorage.getItem(STORAGE_KEY);
-    if (legacyState) {
-      try {
-        await dbSet(DB_KEY_APP_STATE, JSON.parse(legacyState));
-        migrated = true;
-      } catch (e) { console.warn("Failed to migrate appState:", e); }
-    }
-
-    // Migrate theme
-    const theme = localStorage.getItem(THEME_KEY);
-    if (theme) {
-      await dbSet(DB_KEY_THEME, theme);
-      migrated = true;
-    }
-
-    // Migrate controls collapsed
-    const controlsCollapsed = localStorage.getItem(CONTROLS_KEY);
-    if (controlsCollapsed) {
-      await dbSet(DB_KEY_CONTROLS_COLLAPSED, controlsCollapsed === "1");
-      migrated = true;
-    }
-
-    // Migrate summary collapsed
-    const summaryCollapsed = localStorage.getItem(SUMMARY_COLLAPSED_KEY);
-    if (summaryCollapsed) {
-      await dbSet(DB_KEY_SUMMARY_COLLAPSED, summaryCollapsed === "1");
-      migrated = true;
-    }
-
-    // Migrate month cursor
-    const monthCursor = localStorage.getItem(MONTH_CURSOR_KEY);
-    if (monthCursor) {
-      await dbSet(DB_KEY_MONTH_CURSOR, monthCursor);
-      migrated = true;
-    }
-
-    // Migrate collapsed periods
-    const collapsedPeriods = localStorage.getItem(PERIODS_COLLAPSED_KEY);
-    if (collapsedPeriods) {
-      try {
-        await dbSet(DB_KEY_COLLAPSED_PERIODS, JSON.parse(collapsedPeriods));
-        migrated = true;
-      } catch (e) { console.warn("Failed to migrate collapsedPeriods:", e); }
-    }
-
-    // Migrate backup reminder data
-    const backupDirty = localStorage.getItem(BACKUP_REMINDER_DIRTY_KEY);
-    if (backupDirty) {
-      await dbSet(DB_KEY_BACKUP_REMINDER_DIRTY, backupDirty === "1");
-      migrated = true;
-    }
-
-    const backupLastChange = localStorage.getItem(BACKUP_REMINDER_LAST_CHANGE_KEY);
-    if (backupLastChange) {
-      await dbSet(DB_KEY_BACKUP_REMINDER_LAST_CHANGE, backupLastChange);
-      migrated = true;
-    }
-
-    const backupLastShown = localStorage.getItem(BACKUP_REMINDER_LAST_SHOWN_KEY);
-    if (backupLastShown) {
-      await dbSet(DB_KEY_BACKUP_REMINDER_LAST_SHOWN, backupLastShown);
-      migrated = true;
-    }
-
-    // Migrate PIN verified
-    const pinVerified = localStorage.getItem(PIN_VERIFIED_KEY);
-    if (pinVerified) {
-      await dbSet(DB_KEY_PIN_VERIFIED, pinVerified === "1");
-      migrated = true;
-    }
-
-    // Clear localStorage after successful migration
-    if (migrated) {
-      const keysToClear = [
-        STORAGE_KEY, THEME_KEY, CONTROLS_KEY, SUMMARY_COLLAPSED_KEY,
-        MONTH_CURSOR_KEY, PERIODS_COLLAPSED_KEY, BACKUP_REMINDER_DIRTY_KEY,
-        BACKUP_REMINDER_LAST_CHANGE_KEY, BACKUP_REMINDER_LAST_SHOWN_KEY,
-        PIN_VERIFIED_KEY
-      ];
-      keysToClear.forEach(key => {
-        try { localStorage.removeItem(key); } catch (e) {}
-      });
-    }
-
-    migrationCompleted = true;
-    return migrated;
-  } catch (error) {
-    console.error("Migration failed:", error);
-    return false;
-  }
 }
 
 /* =========================

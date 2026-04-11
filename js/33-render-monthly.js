@@ -16,7 +16,7 @@ if (appState.grandMode === "active") {
     ? calcGroupStatusCounts(current)
     : { done: 0, fail: 0, fixed: 0 };
 } else {
-  status = calcOverallStatusCounts();
+  status = calcStatusCountsByMode("all");
 }
 
   const doneEl = document.getElementById("monthDone");

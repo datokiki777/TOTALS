@@ -37,23 +37,7 @@ function addDebugIssue(list, type, message, meta = {}) {
 
 function debugCheckStorage() {
   console.group("🔍 STORAGE CHECK");
-  
-  // Check localStorage for legacy ct_* keys
-  let localStorageLegacyKeys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith("ct_")) {
-      localStorageLegacyKeys.push(key);
-    }
-  }
-  
-  if (localStorageLegacyKeys.length === 0) {
-    console.log("✅ No legacy ct_* keys found in localStorage");
-  } else {
-    console.warn("⚠️ Legacy localStorage keys found:", localStorageLegacyKeys);
-    console.log("If migration worked, these should be empty. You can clear them with: debugClearLegacyStorage()");
-  }
-  
+
   // Check IndexedDB
   const request = indexedDB.open(DB_NAME, DB_VERSION);
   request.onerror = () => {
@@ -63,52 +47,19 @@ function debugCheckStorage() {
     const db = request.result;
     const tx = db.transaction([DB_STORE_MAIN], "readonly");
     const store = tx.objectStore(DB_STORE_MAIN);
-    const getAll = store.getAll();
-    getAll.onsuccess = () => {
-      const data = getAll.result;
-      console.log(`📦 IndexedDB (${DB_NAME}) contains ${data.length} items:`);
-      data.forEach(item => {
-        if (item && typeof item === "object") {
-          const keys = Object.keys(item);
-          console.log(`   - Store item with keys: ${keys.join(", ")}`);
-        } else {
-          console.log(`   - Store item:`, item);
-        }
-      });
+    const getAllKeys = store.getAllKeys();
+    getAllKeys.onsuccess = () => {
+      const keys = getAllKeys.result;
+      console.log(`📦 IndexedDB (${DB_NAME}) contains ${keys.length} keys:`);
+      keys.forEach(k => console.log(`   - ${k}`));
     };
-    getAll.onerror = () => {
-      console.error("Failed to read IndexedDB data");
+    getAllKeys.onerror = () => {
+      console.error("Failed to read IndexedDB keys");
     };
     db.close();
   };
-  
-  console.groupEnd();
-}
 
-function debugClearLegacyStorage() {
-  const keysToClear = [
-    "client_totals_groups_v1",
-    "ct_controls_collapsed",
-    "ct_theme_v1",
-    "ct_summary_collapsed",
-    "ct_month_cursor",
-    "ct_periods_collapsed",
-    "ct_backup_reminder_dirty",
-    "ct_backup_reminder_last_change",
-    "ct_backup_reminder_last_shown_week",
-    "ct_pin_verified_v1"
-  ];
-  
-  let cleared = 0;
-  keysToClear.forEach(key => {
-    if (localStorage.getItem(key) !== null) {
-      localStorage.removeItem(key);
-      cleared++;
-    }
-  });
-  
-  console.log(`🧹 Cleared ${cleared} legacy localStorage keys`);
-  return cleared;
+  console.groupEnd();
 }
 
 function runAppDebugChecks() {
