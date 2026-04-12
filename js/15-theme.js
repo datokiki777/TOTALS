@@ -6,11 +6,15 @@ async function initThemeAsync() {
   document.documentElement.setAttribute("data-theme", saved);
   if (themeSwitch) {
     themeSwitch.checked = saved === "light";
-    themeSwitch.addEventListener("change", async () => {
-      const next = themeSwitch.checked ? "light" : "dark";
-      await dbSet(DB_KEY_THEME, next);
-      document.documentElement.setAttribute("data-theme", next);
-    });
+    themeSwitch.addEventListener("change", () => {
+  const next = themeSwitch.checked ? "light" : "dark";
+
+  // 1. UI მაშინვე იცვლება
+  document.documentElement.setAttribute("data-theme", next);
+
+  // 2. შენახვა ხდება ფონში (არ ველოდებით)
+  dbSet(DB_KEY_THEME, next).catch(console.error);
+});
   }
 }
 

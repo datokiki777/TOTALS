@@ -7,9 +7,10 @@ function uuid() {
 
 function fmt(n) {
   const v = Number.isFinite(n) ? n : 0;
-  return v.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  const rounded = Math.round(v); // ← მთავარი
+
+  return rounded.toLocaleString(undefined, {
+    maximumFractionDigits: 0,
   });
 }
 
@@ -90,6 +91,22 @@ function parseMoney(value) {
 
   const n = Number(s);
   return Number.isFinite(n) ? n : NaN;
+}
+
+function sanitizeIntegerMoneyInput(value) {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
+function normalizeMoneyToStoredInteger(value) {
+  if (value === null || value === undefined) return "";
+
+  const raw = String(value).trim();
+  if (!raw) return "";
+
+  const n = parseMoney(raw);
+  if (!Number.isFinite(n)) return "";
+
+  return String(Math.round(n));
 }
 
 function clampRate(percent) {

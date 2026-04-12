@@ -131,8 +131,17 @@ async function render() {
 
       if (custEl) custEl.value = r.customer ?? "";
       if (cityEl) cityEl.value = r.city ?? "";
-      if (grossEl) grossEl.value = r.gross ?? "";
-      if (netEl) netEl.value = r.net ?? "";
+      if (grossEl) {
+          grossEl.value = sanitizeIntegerMoneyInput(r.gross ?? "");
+          grossEl.inputMode = "numeric";
+          grossEl.setAttribute("pattern", "[0-9]*");
+       }
+
+      if (netEl) {
+          netEl.value = sanitizeIntegerMoneyInput(r.net ?? "");
+          netEl.inputMode = "numeric";
+          netEl.setAttribute("pattern", "[0-9]*");
+       }
 
       if (doneBtn) {
         const state = ["none", "done", "fail", "fixed"].includes(r.done) ? r.done : "none";
@@ -154,10 +163,15 @@ async function render() {
 
       // Gross change - affects totals
       grossEl?.addEventListener("input", async () => {
-        r.gross = grossEl.value;
-        await saveState();
-        await updateAfterRowChange(p.id);
-      });
+      const cleaned = sanitizeIntegerMoneyInput(grossEl.value);
+      if (grossEl.value !== cleaned) {
+      grossEl.value = cleaned;
+      }
+
+  r.gross = cleaned;
+  await saveState();
+  await updateAfterRowChange(p.id);
+});
 
       let previousNetValue = r.net ?? "";
 
@@ -167,10 +181,15 @@ async function render() {
 
       // Net change - affects totals
       netEl?.addEventListener("input", async () => {
-        r.net = netEl.value;
-        await saveState();
-        await updateAfterRowChange(p.id);
-      });
+      const cleaned = sanitizeIntegerMoneyInput(netEl.value);
+      if (netEl.value !== cleaned) {
+      netEl.value = cleaned;
+     }
+
+  r.net = cleaned;
+  await saveState();
+  await updateAfterRowChange(p.id);
+});
 
       // Net suspicious check
       netEl?.addEventListener("change", async () => {

@@ -68,6 +68,23 @@ async function handleExportJson() {
    JSON Import
 ========================= */
 
+function normalizeImportedMoneyEverywhere(stateLike) {
+  if (!stateLike || !Array.isArray(stateLike.groups)) return stateLike;
+
+  stateLike.groups.forEach((group) => {
+    const periods = group?.data?.periods || [];
+    periods.forEach((period) => {
+      const rows = period?.rows || [];
+      rows.forEach((row) => {
+        row.gross = normalizeMoneyToStoredInteger(row.gross);
+        row.net = normalizeMoneyToStoredInteger(row.net);
+      });
+    });
+  });
+
+  return stateLike;
+}
+
 async function handleImportJsonChange(e) {
   const file = e?.target?.files?.[0];
   if (!file) return;
@@ -92,7 +109,8 @@ async function handleImportJsonChange(e) {
       return;
     }
 
-    const doMerge = await askConfirm(
+      incoming = normalizeImportedMoneyEverywhere(incoming);
+      const doMerge = await askConfirm(
       `Import JSON file:\n${file.name}\n\nDo you want to merge this file into your current data?`,
       "Import JSON",
       { type: "primary", okText: "Merge" }
@@ -126,7 +144,7 @@ async function handleImportJsonChange(e) {
 
     if (!doReplace) return;
 
-    appState = normalizeAppState(incoming);
+    appState = normalizeAppState(normalizeImportedMoneyEverywhere(incoming));
     cleanupDefaultGroup();
     await saveState();
     render();
@@ -698,14 +716,14 @@ async function handleImportExcelChange(e) {
       }
 
       period.rows.push({
-        id: uuid(),
-        customer: String(row.Client || "").trim(),
-        city: String(row.City || "").trim(),
-        gross: String(row.Gross ?? "").trim(),
-        net: String(row.Net ?? "").trim(),
+         id: uuid(),
+         customer: String(row.Client || "").trim(),
+         city: String(row.City || "").trim(),
+         gross: normalizeMoneyToStoredInteger(row.Gross),
+         net: normalizeMoneyToStoredInteger(row.Net),
         done: ["none", "done", "fail", "fixed"].includes(String(row.Status || "").trim())
-          ? String(row.Status || "").trim()
-          : "none"
+        ? String(row.Status || "").trim()
+        : "none"
       });
     });
 
