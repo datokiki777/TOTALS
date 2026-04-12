@@ -832,6 +832,19 @@ html[data-theme="light"] .theme-switch .slider::before{
   box-shadow:0 2px 8px rgba(15,23,42,.16);
 }
 
+html[data-theme="light"] .theme-switch input:checked + .slider::before{
+  box-shadow:
+    0 0 10px rgba(93,212,255,.45),
+    0 0 18px rgba(93,212,255,.22),
+    0 2px 8px rgba(15,23,42,.16);
+}
+
+html[data-theme="dark"] .theme-switch input:checked + .slider::before{
+  box-shadow:
+    0 0 10px rgba(93,212,255,.55),
+    0 0 18px rgba(93,212,255,.28);
+}
+
 /* Light theme: Data & Backup modal */
 html[data-theme="light"] .backup-info-card,
 html[data-theme="light"] .backup-actions-card{

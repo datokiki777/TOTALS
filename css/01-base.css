@@ -48,6 +48,10 @@ body{
   min-height:100%;
 }
 
+html{
+  transition: background .2s ease, color .2s ease;
+}
+
 body{
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -76,6 +80,19 @@ body{
 .period-collapse-btn:focus-visible,
 .period-card summary:focus,
 .period-card summary:focus-visible{
+  outline: none;
+  box-shadow: none;
+}
+
+.top-menu-btn{
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  outline: none;
+}
+
+.top-menu-btn:focus,
+.top-menu-btn:focus-visible,
+.top-menu-btn:active{
   outline: none;
   box-shadow: none;
 }
@@ -114,4 +131,31 @@ body{
 .toggle-btn:active{
   outline: none;
   box-shadow: none;
+}
+
+.theme-switch,
+.theme-switch *{
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  outline: none;
+}
+
+.theme-switch:focus,
+.theme-switch:focus-visible,
+.theme-switch *:focus,
+.theme-switch *:focus-visible{
+  outline:none;
+  box-shadow:none;
+}
+
+/* =========================================================
+   Part 6: Global tap highlight off
+========================================================= */
+
+button,
+[role="button"],
+input,
+label{
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
 }
