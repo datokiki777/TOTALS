@@ -89,6 +89,10 @@
 - parseMoney(), clampRate(), safeFileName()
 - escapeHtml()
 - getDigitsOnly(), isSuspiciousNetComparedToGross()
+- sanitizeIntegerMoneyInput()
+- normalizeMoneyToStoredInteger()
+  → whole-euro only input/import normalization
+  → decimals/cent values rounded on import
 
 ═══════════════════════════════════════
 10-calc-dates.js
@@ -173,14 +177,17 @@
 16-import-export.js (renamed from 11-import-export.js)
 ═══════════════════════════════════════
 - handleExportJson(), handleImportJsonChange()
-  → JSON replace imports call cleanupDefaultGroup()
-  → JSON export updates backup meta (lastBackupAt, count)
+- JSON replace imports call cleanupDefaultGroup()
+- JSON export updates backup meta (lastBackupAt, count)
 - handleExportExcel(), handleImportExcelChange()
-  → Excel replace imports call cleanupDefaultGroup()
+- Excel replace imports call cleanupDefaultGroup()
 - handleExportPdf(), exportPdfAllGroups()
 - downloadJson(), nowStamp()
 - JSON menu buttons hidden from top menu UI
-  → JSON backup/restore now opened via Data & Backup modal
+- JSON backup/restore now opened via Data & Backup modal
+- JSON import normalizes gross/net to whole euros
+- Excel import normalizes gross/net to whole euros
+- decimal money values rounded automatically on import
 
 ═══════════════════════════════════════
 15-theme.js
@@ -213,6 +220,8 @@ WORKSPACE & MODE:
 31-render-periods.js
 ═══════════════════════════════════════
 - render() - FULL EDIT VIEW RENDER (structural changes)
+- gross/net inputs restricted to digits only
+- inputMode numeric + integer sanitizing on input
 
 ═══════════════════════════════════════
 32-render-review.js
