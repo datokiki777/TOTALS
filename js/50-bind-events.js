@@ -95,6 +95,12 @@ archiveGroupBtn?.addEventListener("click", async () => {
   ).then(async (ok) => {
     if (!ok) return;
     await toggleArchiveGroup(g.id);
+    if (typeof triggerImmediateCloudSync === "function") {
+      triggerImmediateCloudSync("archive-toggle");
+    }
+    if (typeof triggerImmediateCloudSync === "function") {
+      triggerImmediateCloudSync("archive-toggle");
+    }
     render();
     if (appState.uiMode === "review") renderReview();
   });
@@ -108,6 +114,12 @@ defaultRateInput?.addEventListener("input", async () => {
   const g = activeGroup();
   g.data.defaultRatePercent = clampRate(defaultRateInput.value);
   await saveState();
+  if (typeof scheduleCloudAutoSync === "function") {
+    scheduleCloudAutoSync("default-rate");
+  }
+  if (typeof scheduleCloudAutoSync === "function") {
+    scheduleCloudAutoSync("default-rate");
+  }
   await updateAfterGlobalChange();
   if (appState.uiMode === "review") renderReview();
 });
@@ -135,7 +147,13 @@ addPeriodBtn?.addEventListener("click", async () => {
   await setPeriodCollapsed(newPeriod.id, false);
 
   await saveState();
+  if (typeof triggerImmediateCloudSync === "function") {
+    triggerImmediateCloudSync("add-period");
+  }
   render();
+  if (typeof triggerImmediateCloudSync === "function") {
+    triggerImmediateCloudSync("add-period");
+  }
   if (appState.uiMode === "review") renderReview();
 
   setTimeout(() => {
@@ -173,7 +191,13 @@ resetBtn?.addEventListener("click", async () => {
 
   g.data = defaultGroupData();
   await saveState();
+  if (typeof triggerImmediateCloudSync === "function") {
+    triggerImmediateCloudSync("reset-group");
+  }
   render();
+  if (typeof triggerImmediateCloudSync === "function") {
+    triggerImmediateCloudSync("reset-group");
+  }
   if (appState.uiMode === "review") renderReview();
 });
 
@@ -319,4 +343,30 @@ createBackupBtn?.addEventListener("click", async () => {
 restoreBackupBtn?.addEventListener("click", () => {
   dataBackupModal.style.display = "none";
   menuImportJsonInput?.click();
+});
+
+cloudSaveBtn?.addEventListener("click", async () => {
+  if (typeof handleCloudSave !== "function") {
+    await askConfirm(
+      "Cloud Save is not connected yet.",
+      "Cloud Sync",
+      { singleButton: true, okText: "OK" }
+    );
+    return;
+  }
+
+  await handleCloudSave();
+});
+
+cloudLoadBtn?.addEventListener("click", async () => {
+  if (typeof handleCloudLoad !== "function") {
+    await askConfirm(
+      "Cloud Load is not connected yet.",
+      "Cloud Sync",
+      { singleButton: true, okText: "OK" }
+    );
+    return;
+  }
+
+  await handleCloudLoad();
 });

@@ -72,8 +72,16 @@ async function saveState(options = {}) {
     if (appState) {
       await dbSet(DB_KEY_APP_STATE, appState);
     }
+
     if (!options.skipBackupReminderDirty) {
       await markBackupReminderDirty();
+    }
+
+    if (
+      !options.skipCloudAutoSync &&
+      typeof scheduleCloudAutoSync === "function"
+    ) {
+      scheduleCloudAutoSync(options.cloudReason || "save-state");
     }
   } catch (error) {
     console.error("Failed to save state:", error);

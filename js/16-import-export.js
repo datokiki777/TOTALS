@@ -120,6 +120,10 @@ async function handleImportJsonChange(e) {
       const summary = mergeAppState(incoming);
 
       await saveState();
+      
+      if (typeof triggerImmediateCloudSync === "function") {
+        triggerImmediateCloudSync("json-merge");
+      }
 
       if (appState.uiMode === "edit") {
   render();
@@ -153,6 +157,10 @@ async function handleImportJsonChange(e) {
     appState = normalizeAppState(normalizeImportedMoneyEverywhere(incoming));
     cleanupDefaultGroup();
     await saveState();
+    
+    if (typeof triggerImmediateCloudSync === "function") {
+      triggerImmediateCloudSync("json-replace");
+    }
 
     if (appState.uiMode === "edit") {
     render();
@@ -792,6 +800,9 @@ async function handleImportExcelChange(e) {
     });
 
     await saveState();
+    if (typeof triggerImmediateCloudSync === "function") {
+      triggerImmediateCloudSync("excel-replace");
+    }
     if (appState.uiMode === "edit") {
   render();
     } else {

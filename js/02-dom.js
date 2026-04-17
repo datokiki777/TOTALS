@@ -96,7 +96,12 @@ const dbLastBackupEl = document.getElementById("dbLastBackup");
 const dbCountEl = document.getElementById("dbCount");
 const dbStatusEl = document.getElementById("dbStatus");
 
+const dbCloudSyncStatusEl = document.getElementById("dbCloudSyncStatus");
+
 const createBackupBtn = document.getElementById("createBackupBtn");
 const restoreBackupBtn = document.getElementById("restoreBackupBtn");
+
+const cloudSaveBtn = document.getElementById("cloudSaveBtn");
+const cloudLoadBtn = document.getElementById("cloudLoadBtn");
 
 let bodyOverflowBeforePinLock = "";

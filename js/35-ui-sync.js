@@ -110,4 +110,7 @@ async function updateDataBackupInfo() {
       dbStatusEl.classList.add("backup-status-none");
     }
   }
+  if (typeof refreshCloudSyncStatusFromServer === "function") {
+    refreshCloudSyncStatusFromServer();
+  }
 }
