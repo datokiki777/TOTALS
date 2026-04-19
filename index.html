@@ -156,7 +156,7 @@
     <button id="modeReviewBtn" class="btn small">Review</button>
   </div>
 
-  <button id="controlsToggle" class="btn small">Controls</button>
+  <button id="controlsToggle" class="btn small">⚙ Controls</button>
 
   <label class="theme-switch" title="Theme">
     <input id="themeSwitch" type="checkbox">
@@ -186,7 +186,7 @@
               <button id="deleteGroupBtn" class="btn small danger">Del</button>
             </div>
 
-            <button id="archiveGroupBtn" class="btn small" title="Archive / Unarchive group">Archive</button>
+            <button id="archiveGroupBtn" class="btn small" title="Archive / Unarchive group">📦</button>
           </div>
         </label>
 
@@ -211,7 +211,7 @@
     <section class="summary card">
   <div class="summary-head">
     <button id="summaryCollapseBtn" class="summary-title-btn" type="button">
-      <span>Overview</span>
+      <span>📊 Overview</span>
       <span id="summaryCollapseIcon" class="summary-collapse-icon">&#9662;</span>
     </button>
 
@@ -234,7 +234,7 @@
     </div>
 
     <div class="kpi">
-      <div class="kpi-label">My EUR</div>
+      <div class="kpi-label">My €</div>
       <div class="kpi-value" id="grandMy">0.00</div>
     </div>
   </div>
@@ -516,7 +516,7 @@
 
     <!-- Storage -->
     <button id="dataBackupBtn" class="top-menu-item storage-box data-backup-menu-btn" type="button">
-  <span class="data-backup-menu-icon" aria-hidden="true">&#128190;</span>
+  <span class="data-backup-menu-icon">💾</span>
   <span class="data-backup-menu-title">Data & Backup</span>
 </button>
 
@@ -526,51 +526,51 @@
 <div id="dataBackupModal" class="modal-backdrop" style="display:none;">
   <div class="modal">
 
-    <div class="modal-title">Data &amp; Backup</div>
+    <div class="modal-title">💾 Data &amp; Backup</div>
 
     <!-- Information -->
     <div class="card backup-info-card" style="margin-top:10px; padding:14px;">
       <div class="backup-info-list">
 
         <div class="backup-info-row">
-          <div class="backup-info-left"><span>Used Storage</span></div>
+          <div class="backup-info-left">💾 <span>Used Storage</span></div>
           <div class="backup-info-fill"></div>
           <div class="backup-info-right" id="dbStorage">-</div>
         </div>
 
         <div class="backup-info-row">
-          <div class="backup-info-left"><span>Active</span></div>
+          <div class="backup-info-left">🟢 <span>Active</span></div>
           <div class="backup-info-fill"></div>
           <div class="backup-info-right" id="dbActive">-</div>
         </div>
 
         <div class="backup-info-row">
-          <div class="backup-info-left"><span>Archive</span></div>
+          <div class="backup-info-left">📦 <span>Archive</span></div>
           <div class="backup-info-fill"></div>
           <div class="backup-info-right" id="dbArchive">-</div>
         </div>
 
         <div class="backup-info-row">
-          <div class="backup-info-left"><span>Last Backup</span></div>
+          <div class="backup-info-left">🕒 <span>Last Backup</span></div>
           <div class="backup-info-fill"></div>
           <div class="backup-info-right" id="dbLastBackup">-</div>
         </div>
 
         <div class="backup-info-row">
-          <div class="backup-info-left"><span>Backups</span></div>
+          <div class="backup-info-left">📁 <span>Backups</span></div>
           <div class="backup-info-fill"></div>
           <div class="backup-info-right" id="dbCount">-</div>
         </div>
 
         <div class="backup-info-row">
-          <div class="backup-info-left"><span>Status</span></div>
+          <div class="backup-info-left">🛡️ <span>Status</span></div>
           <div class="backup-info-fill"></div>
           <div class="backup-info-right" id="dbStatus">-</div>
         </div>
         
         <div class="backup-info-row">
   <div class="backup-info-left">
-    <span>Cloud Sync</span>
+    <span>☁️ Cloud Sync</span>
   </div>
   <div class="backup-info-fill"></div>
   <div id="dbCloudSyncStatus" class="backup-info-right backup-status-none">—</div>
@@ -582,10 +582,10 @@
     <!-- Actions -->
 <div class="card backup-actions-card" style="margin-top:12px; padding:14px;">
   <div class="backup-actions-grid">
-  <button id="createBackupBtn" class="btn primary backup-action-btn" type="button">Backup</button>
-  <button id="restoreBackupBtn" class="btn backup-action-btn" type="button">Restore</button>
-  <button id="cloudSaveBtn" class="btn primary backup-action-btn cloud-action-btn" type="button">Save Cloud</button>
-<button id="cloudLoadBtn" class="btn backup-action-btn cloud-action-btn" type="button">Load Cloud</button>
+  <button id="createBackupBtn" class="btn primary backup-action-btn" type="button">💾 Backup</button>
+  <button id="restoreBackupBtn" class="btn backup-action-btn" type="button">♻️ Restore</button>
+  <button id="cloudSaveBtn" class="btn primary backup-action-btn cloud-action-btn" type="button">⛅ Save Cloud</button>
+<button id="cloudLoadBtn" class="btn backup-action-btn cloud-action-btn" type="button">⛅ Load Cloud</button>
 </div>
 
   <div class="backup-cloud-note">

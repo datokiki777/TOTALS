@@ -1,5 +1,5 @@
-const CACHE = "client-totals-shell-v5.4";
-const RUNTIME_CACHE = "client-totals-runtime-v5.4";
+const CACHE = "client-totals-shell-v5.2";
+const RUNTIME_CACHE = "client-totals-runtime-v5.2";
 
 const CORE_ASSETS = [
   "./",
