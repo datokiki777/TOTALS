@@ -136,7 +136,7 @@
 </div>
        
        <header class="topbar">
-       <div class="workspace-bar">
+       <div class="workspace-bar topbar-row topbar-row-primary">
   <div class="workspace-switch-wrap">
     <div class="workspace-switch">
       <button id="workspaceActiveBtn" class="workspace-btn active" type="button">Active</button>
@@ -150,7 +150,7 @@
     </button>
   </div>
 </div>
-     <div class="mode-toggle">
+     <div class="mode-toggle topbar-row topbar-row-secondary">
     <div class="mode-switch">
     <button id="modeEditBtn" class="btn small">Edit</button>
     <button id="modeReviewBtn" class="btn small">Review</button>
@@ -167,7 +167,7 @@
 </div>
 
     <!-- Controls -->
-    <div class="controls">
+    <div class="controls control-deck">
       <!-- LEFT SIDE: Groups + Default -->
       <div class="actions-left">
         <!-- GROUPS -->
@@ -208,8 +208,8 @@
   </header>
 
   <main class="container">
-    <section class="summary card">
-  <div class="summary-head">
+    <section class="summary card summary-premium">
+  <div class="summary-head summary-head-premium">
     <button id="summaryCollapseBtn" class="summary-title-btn" type="button">
       <span>📊 Overview</span>
       <span id="summaryCollapseIcon" class="summary-collapse-icon">&#9662;</span>
@@ -222,24 +222,24 @@
   </div>
 
   <div id="summaryBody" class="summary-body">
-  <div class="summary-grid">
-    <div class="kpi">
+  <div class="summary-grid overview-kpis">
+    <div class="kpi kpi-main kpi-gross">
       <div class="kpi-label">Gross</div>
       <div class="kpi-value" id="grandGross">0.00</div>
     </div>
 
-    <div class="kpi">
+    <div class="kpi kpi-main kpi-net">
       <div class="kpi-label">Net</div>
       <div class="kpi-value" id="grandNet">0.00</div>
     </div>
 
-    <div class="kpi">
+    <div class="kpi kpi-main kpi-my">
       <div class="kpi-label">My €</div>
       <div class="kpi-value" id="grandMy">0.00</div>
     </div>
   </div>
 
-  <div class="status-summary-row premium-status-row">
+  <div class="status-summary-row premium-status-row summary-status-strip">
   <span>Done / Fail / Fixed</span>
   <div class="month-badges">
     <span class="badge-done" id="monthDone" data-status="done">0</span>
@@ -248,7 +248,7 @@
   </div>
 </div>
 
-<div class="overview-date-box">
+<div class="overview-date-box summary-context-box">
   <div class="overview-date-row">
     <span class="overview-date-label">Working period</span>
 
@@ -261,7 +261,7 @@
   </div>
 </div>
 
-  <div class="monthly-stats">
+  <div class="monthly-stats monthly-stats-premium">
     <div class="monthly-head">
       <div class="monthly-title">Monthly • Statistics</div>
 
@@ -298,7 +298,7 @@
     </div>
 
     <!-- REVIEW VIEW -->
-    <div id="globalSearchCard" class="review-card global-search-card" hidden>
+    <div id="globalSearchCard" class="review-card global-search-card review-search-shell" hidden>
   <div class="review-head">
     <div class="review-search" style="width:100%;">
       <input

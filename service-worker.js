@@ -1,5 +1,10 @@
-const CACHE = "client-totals-shell-v5.6";
-const RUNTIME_CACHE = "client-totals-runtime-v5.6";
+const CACHE = "client-totals-shell-v5.7";
+const RUNTIME_CACHE = "client-totals-runtime-v5.7";
+const CDN_CACHE = "client-totals-cdn-v5.7";
+const CDN_ASSETS = [
+  "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",
+  "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"
+];
 
 const CORE_ASSETS = [
   "./",
@@ -71,7 +76,7 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE && key !== RUNTIME_CACHE) {
+          if (key !== CACHE && key !== RUNTIME_CACHE && key !== CDN_CACHE) {
             return caches.delete(key);
           }
         })
@@ -86,6 +91,38 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
+  const isManagedCdnAsset = CDN_ASSETS.includes(url.href);
+
+  if (isManagedCdnAsset) {
+    event.respondWith(
+      (async () => {
+        const cached = await caches.match(req);
+        if (cached) {
+          fetch(req)
+            .then(async (res) => {
+              if (!res || (res.status !== 200 && res.type !== "opaque")) return;
+              const cache = await caches.open(CDN_CACHE);
+              cache.put(req, res.clone());
+            })
+            .catch(() => {});
+          return cached;
+        }
+
+        try {
+          const fresh = await fetch(req);
+          if (fresh && (fresh.status === 200 || fresh.type === "opaque")) {
+            const cache = await caches.open(CDN_CACHE);
+            cache.put(req, fresh.clone());
+          }
+          return fresh;
+        } catch (error) {
+          return caches.match(req);
+        }
+      })()
+    );
+    return;
+  }
+
   if (url.origin !== self.location.origin) return;
 
   const isNavigation =
@@ -110,6 +147,28 @@ self.addEventListener("fetch", (event) => {
             (await caches.match("./")) ||
             (await caches.match("./index.html"))
           );
+        }
+      })()
+    );
+    return;
+  }
+
+  const isCodeAsset =
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".css");
+
+  if (isCodeAsset) {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(req);
+          if (fresh && fresh.status === 200 && fresh.type === "basic") {
+            const runtime = await caches.open(RUNTIME_CACHE);
+            runtime.put(req, fresh.clone());
+          }
+          return fresh;
+        } catch (error) {
+          return caches.match(req);
         }
       })()
     );
