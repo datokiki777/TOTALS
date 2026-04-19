@@ -1,5 +1,5 @@
-const CACHE = "client-totals-shell-v5.3";
-const RUNTIME_CACHE = "client-totals-runtime-v5.3";
+const CACHE = "client-totals-shell-v5.2";
+const RUNTIME_CACHE = "client-totals-runtime-v5.2";
 
 const CORE_ASSETS = [
   "./",
@@ -43,7 +43,6 @@ const CORE_ASSETS = [
   "./js/40-update-flow.js",
   "./js/50-bind-events.js",
   "./js/60-app-init.js",
-  "./js/98-stress-tools.js",
   "./js/99-debug.js",
 
   "./icons/favicon.ico",
@@ -62,7 +61,6 @@ self.addEventListener("install", (event) => {
     (async () => {
       const cache = await caches.open(CACHE);
       await cache.addAll(CORE_ASSETS);
-      await self.skipWaiting();
     })()
   );
 });
