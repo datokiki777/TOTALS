@@ -218,6 +218,7 @@ async function triggerImmediateCloudSync(reason = "big-action") {
 }
 
 async function finalizePendingHistoryDayIfNeeded() {
+	if (!window.__db) return false;
   try {
     const refs = await getCloudRefs();
     const todayKey = toDayKey();
