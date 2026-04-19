@@ -1443,3 +1443,22 @@ button:disabled:active,
   overflow:hidden;
   text-overflow:ellipsis;
 }
+
+/* ===== Disabled buttons (Review mode) ===== */
+
+.btn:disabled,
+button:disabled {
+  opacity: 0.45;
+  filter: grayscale(0.4);
+  cursor: not-allowed;
+  pointer-events: auto;
+
+  box-shadow: none !important;
+}
+
+/* რომ hover/active ეფექტიც გაქრეს */
+.btn:disabled:hover,
+button:disabled:hover {
+  background: inherit;
+  border-color: inherit;
+}
