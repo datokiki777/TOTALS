@@ -165,18 +165,21 @@ if ("serviceWorker" in navigator) {
           btn.textContent = "Update";
 
           btn.onclick = () => {
-            if (!worker) {
-              if (bar) bar.style.display = "none";
-              window.location.reload();
-              return;
-            }
+  const waitingWorker = reg.waiting;
 
-            userAcceptedUpdate = true;
-            btn.disabled = true;
-            btn.textContent = "Updating...";
-            if (bar) bar.style.display = "none";
-            worker.postMessage({ action: "skipWaiting" });
-          };
+  if (!waitingWorker) {
+    if (bar) bar.style.display = "none";
+    window.location.reload();
+    return;
+  }
+
+  userAcceptedUpdate = true;
+  btn.disabled = true;
+  btn.textContent = "Updating...";
+  if (bar) bar.style.display = "none";
+
+  waitingWorker.postMessage({ action: "skipWaiting" });
+};
         }
       };
 
@@ -193,7 +196,7 @@ if ("serviceWorker" in navigator) {
             newWorker.state === "installed" &&
             navigator.serviceWorker.controller
           ) {
-            showUpdateBar(reg.waiting || newWorker);
+            showUpdateBar(reg.waiting);
           }
         });
       });
