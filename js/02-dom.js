@@ -9,6 +9,7 @@ const workspaceActiveBtn = document.getElementById("workspaceActiveBtn");
 const workspaceArchiveBtn = document.getElementById("workspaceArchiveBtn");
 const editView = document.getElementById("editView");
 const reviewView = document.getElementById("reviewView");
+const globalSearchCard = document.getElementById("globalSearchCard");
 const elPeriods = document.getElementById("periods");
 const tplPeriod = document.getElementById("periodTpl");
 const tplRow = document.getElementById("rowTpl");

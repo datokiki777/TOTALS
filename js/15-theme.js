@@ -131,16 +131,20 @@ async function setMode(mode) {
   modeReviewBtn?.classList.toggle("active", appState.uiMode === "review");
 
   if (editView && reviewView) {
-    const isEdit = appState.uiMode === "edit";
-    const isReview = appState.uiMode === "review";
+  const isEdit = appState.uiMode === "edit";
+  const isReview = appState.uiMode === "review";
 
-    editView.hidden = !isEdit;
-    reviewView.hidden = !isReview;
+  editView.hidden = !isEdit;
+  reviewView.hidden = !isReview;
 
-    if (isEdit) {
-      reviewView.innerHTML = "";
-    }
+  if (globalSearchCard) {
+    globalSearchCard.hidden = !isReview;
   }
+
+  if (isEdit) {
+    reviewView.innerHTML = "";
+  }
+}
 
   // mode switch = structural change
   await refreshFullUiState();
