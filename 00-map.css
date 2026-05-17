@@ -33,6 +33,7 @@
 
 03-components.css
 - .btn / .btn.primary / .btn.danger
+- .period-title (positioning anchor for Paid Weeks)
 - .workspace-btn (visual)
 - .mode-switch (visual capsule)
 - .top-menu-btn
@@ -82,6 +83,8 @@
 
 05-forms.css
 - .field / input / select
+- .paid-weeks-inline / .paid-weeks-field / .paid-weeks-input
+  → absolute compact Paid Weeks input inside period-title
 - .group-row (group layout)
 - #groupPickerBtn
 - #addGroupBtn / rename / delete / archive
