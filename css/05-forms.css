@@ -162,33 +162,27 @@
   justify-content: flex-end;
 }
 
-.period-title{
-  position:relative;
-}
-
 .paid-weeks-inline{
   position:absolute;
-  right:0;
-  top:20px;
-  width:96px;
+  right:10px;
+  top:-6px;
+  z-index:5;
 }
 
 .paid-weeks-field{
-  width:96px;
-}
-
-.paid-weeks-field span{
-  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
 }
 
 .paid-weeks-input{
-  width:76px !important;
-  min-width:76px !important;
-  max-width:76px !important;
-  height:42px !important;
+  width:72px !important;
+  min-width:72px !important;
+  max-width:72px !important;
+  height:40px !important;
   text-align:center;
   font-weight:900;
   padding:6px 8px !important;
-  margin:0 auto;
 }
 
